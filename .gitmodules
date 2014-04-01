@@ -1,3 +1,6 @@
 [submodule "contrib/luajit"]
 	path = contrib/luajit
 	url = http://luajit.org/git/luajit-2.0.git
+[submodule "contrib/lanes"]
+	path = contrib/lanes
+	url = https://github.com/LuaLanes/lanes.git
