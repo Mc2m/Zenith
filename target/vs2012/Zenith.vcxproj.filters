@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\src\common.c" />
+    <ClCompile Include="..\..\src\pipe.c" />
+    <ClCompile Include="..\..\src\shared_table.c" />
+    <ClCompile Include="..\..\src\state.c" />
+    <ClCompile Include="..\..\src\stdafx.c" />
+    <ClCompile Include="..\..\src\table.c" />
+    <ClCompile Include="..\..\src\transfer.c" />
+    <ClCompile Include="..\..\src\zenith.c" />
+    <ClCompile Include="..\..\src\particle\mutex.c">
+      <Filter>particle</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\particle\thread.c">
+      <Filter>particle</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\common.h" />
+    <ClInclude Include="..\..\src\pipe.h" />
+    <ClInclude Include="..\..\src\shared_table.h" />
+    <ClInclude Include="..\..\src\state.h" />
+    <ClInclude Include="..\..\src\stdafx.h" />
+    <ClInclude Include="..\..\src\table.h" />
+    <ClInclude Include="..\..\src\transfer.h" />
+    <ClInclude Include="..\..\src\zenith.h" />
+    <ClInclude Include="..\..\src\particle\mutex.h">
+      <Filter>particle</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\particle\particle.h">
+      <Filter>particle</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\particle\thread.h">
+      <Filter>particle</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\..\contrib\lua51.lib" />
+    <Library Include="..\..\contrib\lua51d.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="particle">
+      <UniqueIdentifier>{10c490ee-c2bc-4144-9725-bb3c960c54b9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
