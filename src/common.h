@@ -18,6 +18,8 @@ double l_getrealfield (lua_State *L,int arg,const char *index);
 const char *l_getcharfield (lua_State *L,int arg,const char *index);
 const char *l_getoptcharfield (lua_State *L,int arg,const char *index);
 
+void l_setintindex(lua_State *L,int arg,int index, int value);
+
 int l_getintindex(lua_State *L,int arg,int index);
 
 void l_getElement(lua_State *L,const char *first_element,...);

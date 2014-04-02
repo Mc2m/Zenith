@@ -76,9 +76,7 @@
     <ClCompile Include="..\..\src\common.c" />
     <ClCompile Include="..\..\src\particle\mutex.c" />
     <ClCompile Include="..\..\src\particle\thread.c" />
-    <ClCompile Include="..\..\src\pipe.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="..\..\src\pipe.c" />
     <ClCompile Include="..\..\src\shared_table.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -87,9 +85,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\src\table.c" />
-    <ClCompile Include="..\..\src\transfer.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="..\..\src\transfer.c" />
     <ClCompile Include="..\..\src\zenith.c" />
   </ItemGroup>
   <ItemGroup>
@@ -97,18 +93,14 @@
     <ClInclude Include="..\..\src\particle\mutex.h" />
     <ClInclude Include="..\..\src\particle\particle.h" />
     <ClInclude Include="..\..\src\particle\thread.h" />
-    <ClInclude Include="..\..\src\pipe.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="..\..\src\pipe.h" />
     <ClInclude Include="..\..\src\shared_table.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="..\..\src\state.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
     <ClInclude Include="..\..\src\table.h" />
-    <ClInclude Include="..\..\src\transfer.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="..\..\src\transfer.h" />
     <ClInclude Include="..\..\src\zenith.h" />
   </ItemGroup>
   <ItemGroup>

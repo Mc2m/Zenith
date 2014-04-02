@@ -12,6 +12,7 @@ void load_zenith_table(lua_State *L)
 	lua_getglobal(L,"Zenith");
 	if(lua_isnil(L,-1)) {
 		lua_pop(L,1);
+
 		lua_newtable(L);
 
 		lua_checkstack(L,2);

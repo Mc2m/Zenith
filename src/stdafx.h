@@ -9,6 +9,8 @@
 #define inline _inline
 
 #ifdef _WINDOWS
+#pragma warning(disable : 4996)
+
 #define snprintf _snprintf
 
 #define __STDC__ 1 // Enforces ANSI C compliance.

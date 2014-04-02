@@ -3,49 +3,50 @@
 
 #include "common.h"
 
-
-static const char *const lua_types[] = {
-        "nil", "boolean", "light userdata", "number", "string",
-        "table", "function", "userdata", "thread",
-};
+#define INDEX_CHECK(i) (i < 0 && i != LUA_REGISTRYINDEX ? --i : i)
+#define INDEX_RESTORE(i) (i < 0 && i != LUA_REGISTRYINDEX ? i++ : i)
 
 void l_print_var(lua_State *L,int index,unsigned char showtype)
 {
-	int type = lua_type( L, index );
+	int type = lua_type(L, index);
 	if (type == LUA_TSTRING)       printf( "%s", lua_tostring(L,index));
 	else if (type == LUA_TNUMBER)  printf( "%d", lua_tointeger(L,index));
 	else if (type == LUA_TNIL)     printf( "nil");
 	else if (type == LUA_TBOOLEAN) printf( lua_toboolean(L,index) ? "true" : "false");
 	else                           printf( "%p", lua_topointer(L,index));
 
-	if(showtype) printf( "(%s)", lua_types[ type ]);
+	if(showtype) printf( "(%s)", lua_typename(L,type));
 }
 
 void l_print_table(lua_State *L, int index)
 {
 	size_t i = 1;
 
-	printf("=========    TABLE    =========\n");
-	printf("Indexed content :\n\t");
-
-	lua_pushnumber(L,i);
-	lua_gettable(L,index);
-
-	while(!lua_isnil(L,-1)) {
-		printf("%d: ", i);
-		l_print_var(L,-1,0);
-		printf("\n\t");
-
-		lua_pop(L,1);
-
-		lua_pushnumber(L,++i);
-		lua_gettable(L,index);
+	if(!lua_istable(L,index)) {
+		printf("Warning: variable at index %d of the stack is a %s.\n",index,lua_typename(L,lua_type(L,index)));
+		return;
 	}
 
-	printf("\nhashed content :\n\t");
+	printf("=========    TABLE    =========\n");
+	printf("pointer ref : %p\n",lua_topointer(L,index));
+
+	printf("\nmetatable : ");
+
+	if(lua_getmetatable(L,index)) {
+		printf( "%p\n", lua_topointer(L,index));
+		lua_pop(L,1);
+	} else {
+		printf("nil\n");
+	}
+
+	INDEX_CHECK(index);
+
+	printf("\ncontent :\n\t");
+
+	lua_pushnil(L);
 
 	while (lua_next(L, index)) {
-	/* uses 'key' (at index -2) and 'value' (at index -1) */
+		/* uses 'key' (at index -2) and 'value' (at index -1) */
 		l_print_var(L, -2, 0);
 		printf(" - ");
 		l_print_var(L, -1, 0);
@@ -75,8 +76,6 @@ void l_print_stack(lua_State *L)
 }
 
 //------------------------------------------------//
-
-#define INDEX_CHECK(i) (i < 0 && i != LUA_REGISTRYINDEX ? --i : i)
 
 void l_setboolfield (lua_State *L,int index,const char *field, unsigned char value) {
 	INDEX_CHECK(index);
@@ -161,6 +160,16 @@ const char *l_getoptcharfield (lua_State *L,int arg,const char *index) {
 
 //------------------------------------------------//
 
+void l_setintindex(lua_State *L,int arg,int index, int value)
+{
+	if(arg < 0 && arg != LUA_REGISTRYINDEX) arg -= 2;
+	lua_pushinteger(L,index);
+	lua_pushinteger(L,value);
+	lua_settable(L,arg);
+}
+
+//------------------------------------------------//
+
 int l_getintindex(lua_State *L,int arg,int index) {
 	int val = 0;
 	lua_pushnumber(L,index);
@@ -230,9 +239,10 @@ void l_call (lua_State *L, int narg, int numresults) {
 }
 
 void l_load (lua_State *L, const char *filename) {
-	luaL_loadfile(L, filename);
-
-	l_call(L,0,0);
+	if(luaL_loadfile(L, filename))
+		report(L);
+	else
+		l_call(L,0,0);
 }
 
 void l_parse (lua_State *L, const char *string)
