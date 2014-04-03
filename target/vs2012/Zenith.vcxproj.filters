@@ -3,7 +3,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\common.c" />
     <ClCompile Include="..\..\src\pipe.c" />
-    <ClCompile Include="..\..\src\shared_table.c" />
     <ClCompile Include="..\..\src\state.c" />
     <ClCompile Include="..\..\src\stdafx.c" />
     <ClCompile Include="..\..\src\table.c" />
@@ -19,7 +18,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\common.h" />
     <ClInclude Include="..\..\src\pipe.h" />
-    <ClInclude Include="..\..\src\shared_table.h" />
     <ClInclude Include="..\..\src\state.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
     <ClInclude Include="..\..\src\table.h" />
