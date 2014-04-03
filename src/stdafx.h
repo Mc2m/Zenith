@@ -6,7 +6,9 @@
 #ifndef __included_stdafx_h
 #define __included_stdafx_h
 
+#ifndef __STDC__
 #define inline _inline
+#endif
 
 #ifdef _WINDOWS
 #pragma warning(disable : 4996)

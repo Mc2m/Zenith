@@ -10,7 +10,7 @@ void l_print_var(lua_State *L,int index,unsigned char showtype)
 {
 	int type = lua_type(L, index);
 	if (type == LUA_TSTRING)       printf( "%s", lua_tostring(L,index));
-	else if (type == LUA_TNUMBER)  printf( "%d", lua_tointeger(L,index));
+	else if (type == LUA_TNUMBER)  printf( "%lf", lua_tonumber(L,index));
 	else if (type == LUA_TNIL)     printf( "nil");
 	else if (type == LUA_TBOOLEAN) printf( lua_toboolean(L,index) ? "true" : "false");
 	else                           printf( "%p", lua_topointer(L,index));
@@ -20,8 +20,6 @@ void l_print_var(lua_State *L,int index,unsigned char showtype)
 
 void l_print_table(lua_State *L, int index)
 {
-	size_t i = 1;
-
 	if(!lua_istable(L,index)) {
 		printf("Warning: variable at index %d of the stack is a %s.\n",index,lua_typename(L,lua_type(L,index)));
 		return;
@@ -192,7 +190,7 @@ void l_getElement(lua_State *L,const char *first_element,...)
 
 	va_start(vl,first_element);
 
-	while(elem = va_arg(vl,const char *))
+	while((elem = va_arg(vl,const char *)))
 	{
 		lua_getfield(L,-1,elem);
 		lua_remove(L,-2);

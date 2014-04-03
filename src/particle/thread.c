@@ -58,7 +58,7 @@ size_t particle_thread_join(ParticleThread *pt)
 	CloseHandle(pt->thread);
 	retval = windowsisadick;
 #else
-	pthread_join(pt->thread, &retval);
+	pthread_join(pt->thread, (void **) &retval);
 #endif
 	free(pt);
 

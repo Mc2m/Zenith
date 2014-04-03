@@ -30,7 +30,7 @@ void zenith_pipe_destroy(void)
 	m = 0;
 }
 
-inline void pipe_get_pipe(const char *name) {
+static inline void pipe_get_pipe(const char *name) {
 	lua_checkstack(pipes,2);
 	lua_getglobal(pipes,name);
 	if(lua_isnil(pipes,-1)) {
@@ -70,7 +70,7 @@ static int pipe_send(lua_State *L)
 
 	i = lua_objlen(pipes,-1);
 
-	for(j; j <= numdata; ++j) {
+	for(; j <= numdata; ++j) {
 		lua_pushnumber(pipes,++i);
 		zenith_transfer_data(L,pipes,j);
 		lua_settable(pipes,-3);
@@ -106,7 +106,7 @@ static int pipe_receive(lua_State *L)
 	return 1;
 }
 
-inline void access_table(lua_State *L)
+static inline void access_table(lua_State *L)
 {
 	lua_createtable(L,0,3);
 

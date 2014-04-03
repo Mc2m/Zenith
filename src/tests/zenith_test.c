@@ -37,8 +37,8 @@ size_t test2(void *param) {
 
 int main(int argc, char **argv)
 {
-	ParticleThread *thread1, *thread2;
-	int var1 = 0, var2 = 1;
+	//ParticleThread *thread1, *thread2;
+	//int var1 = 0, var2 = 1;
 	lua_State *L1,*L2;
 
 	zenith_state_initialize(2);
@@ -52,13 +52,10 @@ int main(int argc, char **argv)
 
 	zenith_pipe_create(L1,L2,"test");
 
-	lua_pushstring(L1,"bleh");
 	l_parse(L1,"Zenith.Pipe.pipes.test:send(3,\"test\")");
 
 	l_parse(L2,"print(Zenith.Pipe.pipes.test:receive())");
 	l_parse(L2,"print(Zenith.Pipe.pipes.test:receive())");
-	
-	//zenith_pipe_create(zenith_state_open(0),zenith_state_open(1));
 
 	/*thread1 = particle_thread_create(test1, &var1);
 	thread2 = particle_thread_create(test2, &var2);
