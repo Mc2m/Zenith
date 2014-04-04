@@ -182,7 +182,7 @@ void set_pipe_table(lua_State *L, const char *name)
 		lua_setfield(L,-5,"Pipe");
 	} else {
 		lua_getfield(L,-1,"access");
-		lua_getfield(L,-1,"pipes");
+		lua_getfield(L,-2,"pipes");
 	}
 
 	// STACK
