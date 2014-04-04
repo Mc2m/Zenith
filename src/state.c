@@ -49,7 +49,7 @@ lua_State *zenith_state_open(size_t idx)
 	L = states[idx];
 	if(L) return L;
 
-	L = luaL_newstate();
+	L = states[idx] = luaL_newstate();
 	l_setintfield(L, LUA_REGISTRYINDEX, "state_idx", idx);
 
 	return L;
