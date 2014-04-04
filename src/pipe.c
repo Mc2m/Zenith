@@ -44,7 +44,7 @@ static inline void pipe_get_pipe(size_t id) {
 	lua_gettable(pipes,1);
 }
 
-static int pipe_send(lua_State *L)
+int zenith_pipe_send(lua_State *L)
 {
 	// STACK
 	// 1 - pipe obj
@@ -87,7 +87,7 @@ static int pipe_send(lua_State *L)
 	return 0;
 }
 
-static int pipe_receive(lua_State *L)
+int zenith_pipe_receive(lua_State *L)
 {
 	// STACK
 	// -1 pipe object
@@ -140,8 +140,8 @@ static inline void access_table(lua_State *L)
 {
 	lua_createtable(L,0,3);
 
-	l_setfunctionfield(L,-1,"send",pipe_send);
-	l_setfunctionfield(L,-1,"receive",pipe_receive);
+	l_setfunctionfield(L,-1,"send",zenith_pipe_send);
+	l_setfunctionfield(L,-1,"receive",zenith_pipe_receive);
 
 	lua_pushvalue(L,-1);
 	lua_setfield(L,-2,"__index");
