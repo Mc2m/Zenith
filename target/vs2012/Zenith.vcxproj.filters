@@ -8,10 +8,7 @@
     <ClCompile Include="..\..\src\table.c" />
     <ClCompile Include="..\..\src\transfer.c" />
     <ClCompile Include="..\..\src\zenith.c" />
-    <ClCompile Include="..\..\src\particle\mutex.c">
-      <Filter>particle</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\particle\thread.c">
+    <ClCompile Include="..\..\src\particle\particle.c">
       <Filter>particle</Filter>
     </ClCompile>
   </ItemGroup>
@@ -23,13 +20,7 @@
     <ClInclude Include="..\..\src\table.h" />
     <ClInclude Include="..\..\src\transfer.h" />
     <ClInclude Include="..\..\src\zenith.h" />
-    <ClInclude Include="..\..\src\particle\mutex.h">
-      <Filter>particle</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\particle\particle.h">
-      <Filter>particle</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\particle\thread.h">
       <Filter>particle</Filter>
     </ClInclude>
   </ItemGroup>

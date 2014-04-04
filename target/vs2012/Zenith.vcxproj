@@ -74,8 +74,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\common.c" />
-    <ClCompile Include="..\..\src\particle\mutex.c" />
-    <ClCompile Include="..\..\src\particle\thread.c" />
+    <ClCompile Include="..\..\src\particle\particle.c" />
     <ClCompile Include="..\..\src\pipe.c" />
     <ClCompile Include="..\..\src\state.c" />
     <ClCompile Include="..\..\src\stdafx.c">
@@ -87,9 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\common.h" />
-    <ClInclude Include="..\..\src\particle\mutex.h" />
     <ClInclude Include="..\..\src\particle\particle.h" />
-    <ClInclude Include="..\..\src\particle\thread.h" />
     <ClInclude Include="..\..\src\pipe.h" />
     <ClInclude Include="..\..\src\state.h" />
     <ClInclude Include="..\..\src\stdafx.h" />

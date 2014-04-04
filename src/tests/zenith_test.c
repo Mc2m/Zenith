@@ -5,40 +5,26 @@
 
 #include "particle/particle.h"
 
-unsigned char stop = 0;
-
 size_t test1(void *param) {
-	int idx = *((int *)param);
-	lua_State *L = zenith_state_from_idx(idx);
+	lua_State *L = (lua_State *) param;
 
-	luaL_openlibs(L);
-
-	//test 1
-	while(!stop) {
-		l_parse(L,"print('bleh')");
-	}
+	l_parse(L,"print(Zenith.Pipe.pipes.test:wait(3))");
 
 	return 0;
 }
 
 size_t test2(void *param) {
-	int idx = *((int *)param);
-	lua_State *L = zenith_state_from_idx(idx);
+	lua_State *L = (lua_State *) param;
 
-	luaL_openlibs(L);
+	l_parse(L,"local p = Zenith.Pipe.pipes.test while not p:receive() do end p:send('bleh')");
 
-	//test 2
-	while(!stop) {
-		l_parse(L,"print('blah')");
-	}
 
 	return 0;
 }
 
 int main(int argc, char **argv)
 {
-	//ParticleThread *thread1, *thread2;
-	//int var1 = 0, var2 = 1;
+	ParticleThread *thread1, *thread2;
 	lua_State *L1,*L2;
 
 	zenith_state_initialize(2);
@@ -52,15 +38,11 @@ int main(int argc, char **argv)
 
 	zenith_pipe_create(L1,L2,"test");
 
-	l_parse(L1,"Zenith.Pipe.pipes.test:send(3,\"test\")");
-
-	l_parse(L2,"print(Zenith.Pipe.pipes.test:receive())");
-
-	/*thread1 = particle_thread_create(test1, &var1);
-	thread2 = particle_thread_create(test2, &var2);
+	thread1 = particle_thread_create(test1,L1);
+	thread2 = particle_thread_create(test2,L2);
 
 	particle_thread_join(thread1);
-	particle_thread_join(thread2);*/
+	particle_thread_join(thread2);
 
 	zenith_pipe_destroy();
 	zenith_state_destroy();
