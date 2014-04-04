@@ -55,7 +55,6 @@ int main(int argc, char **argv)
 	l_parse(L1,"Zenith.Pipe.pipes.test:send(3,\"test\")");
 
 	l_parse(L2,"print(Zenith.Pipe.pipes.test:receive())");
-	l_parse(L2,"print(Zenith.Pipe.pipes.test:receive())");
 
 	/*thread1 = particle_thread_create(test1, &var1);
 	thread2 = particle_thread_create(test2, &var2);
