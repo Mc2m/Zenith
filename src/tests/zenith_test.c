@@ -44,8 +44,8 @@ int main(int argc, char **argv)
 	zenith_state_initialize(2);
 	zenith_pipe_initialize();
 
-	L1 = zenith_state_open(0);
-	L2 = zenith_state_open(1);
+	L1 = zenith_state_open(0,"sender");
+	L2 = zenith_state_open(1,"receiver");
 
 	luaL_openlibs(L1);
 	luaL_openlibs(L2);

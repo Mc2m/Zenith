@@ -2,6 +2,7 @@
 #include "stdafx.h"
 
 #include "common.h"
+#include "state.h"
 
 #define INDEX_CHECK(i) (i < 0 && i != LUA_REGISTRYINDEX ? --i : i)
 #define INDEX_RESTORE(i) (i < 0 && i != LUA_REGISTRYINDEX ? i++ : i)
@@ -215,8 +216,13 @@ static void report(lua_State *L)
 {
 	if (!lua_isnil(L, -1)) {
 		const char *msg = lua_tostring(L, -1);
-		if (msg == NULL) msg = "(error object is not a string)";
-		printf("%s\n", msg);
+		size_t idx = zenith_state_from_state(L);
+		const char *statename = zenith_state_get_name(idx);
+
+		if(!msg) msg = "(error object is not a string)";
+
+		if(statename) printf("State %s: %s\n",statename, msg);
+		else printf("State %d: %s\n",idx, msg);
 		lua_pop(L, 1);
 	}
 }
