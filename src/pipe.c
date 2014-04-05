@@ -55,30 +55,16 @@ static inline unsigned char pipe_get_pipe(size_t id) {
 	return lua_isnil(pipes,-1);
 }
 
-int zenith_pipe_send(lua_State *L)
+static inline void pipe_send(lua_State *L, size_t id, unsigned char wait)
 {
-	// STACK
-	// 1 - pipe obj
-	// 2 - data
-	// 3 - data
-	// ...
-
 	size_t i, j = 2, numdata = lua_gettop(L);
-	size_t id;
 	PipeData *d;
-	
-	if(numdata < 2) return 0;
-
-	//find pipe name
-	id = l_getintfield(L,1,"id");
-
-	particle_mutex_lock(m);
 
 	//get current pipe
 	if(pipe_get_pipe(id)) {
 		particle_mutex_unlock(m);
 		luaL_error(L,"There are no pipe with id %d",id);
-		return 0;
+		return;
 	}
 
 	i = lua_objlen(pipes,-1);
@@ -91,28 +77,41 @@ int zenith_pipe_send(lua_State *L)
 
 	d = &data[id-1];
 	d->num_data += numdata - 1;
-	if(data->v) particle_condition_var_wake(data->v);
+
+	if(wait) {
+		if(!data->v) data->v = particle_condition_var_new(m);
+		particle_condition_var_sleep(data->v);
+	} else if(data->v) {
+		particle_condition_var_wake(data->v);
+	}
 
 	lua_pop(pipes,1); // pop the pipe
+}
 
-	particle_mutex_unlock(m);
+int zenith_pipe_send(lua_State *L)
+{
+	// STACK
+	// 1 - pipe obj
+	// 2 - data
+	// 3 - data
+	// ...
+
+	if(lua_gettop(L) > 1) {
+		//find pipe id
+		size_t id = l_getintfield(L,1,"id");
+
+		particle_mutex_lock(m);
+		pipe_send(L,id,0);
+		particle_mutex_unlock(m);
+	}
 
 	return 0;
 }
 
-int zenith_pipe_receive(lua_State *L)
+static inline size_t pipe_receive(lua_State *L, size_t id)
 {
-	// STACK
-	// -1 pipe object or timeout
-
-
-	//find pipe name
-
-	size_t id = l_getintfield(L,1,"id"), numdata, j, i = 1;
-
-	particle_mutex_lock(m);
-
-	numdata = data[id-1].num_data;
+	size_t numdata = data[id-1].num_data;
+	size_t j = numdata;
 
 	if(numdata) {
 		//get the pipe
@@ -122,8 +121,6 @@ int zenith_pipe_receive(lua_State *L)
 			luaL_error(L,"There are no pipe with id %d",id);
 			return 0;
 		}
-
-		j = numdata;
 
 		//push the data into the table
 		while(j--) {
@@ -144,9 +141,24 @@ int zenith_pipe_receive(lua_State *L)
 
 	lua_pop(pipes,1); // pop the pipe
 
+	return numdata;
+}
+
+int zenith_pipe_receive(lua_State *L)
+{
+	// STACK
+	// -1 pipe object or timeout
+
+
+	//find pipe name
+
+	size_t id = l_getintfield(L,1,"id"),numdata;
+
+	particle_mutex_lock(m);
+	numdata = pipe_receive(L,id);
 	particle_mutex_unlock(m);
 
-	return numdata;
+	return (int) numdata;
 }
 
 int zenith_pipe_send_wait(lua_State *L)
@@ -157,44 +169,19 @@ int zenith_pipe_send_wait(lua_State *L)
 	// 3 - data
 	// ...
 
-	size_t i, j = 2, numdata = lua_gettop(L);
-	size_t id;
-	PipeData *d;
-	
-	if(numdata < 2) return 0;
+	if(lua_gettop(L) > 1) {
+		//find pipe id
+		size_t id = l_getintfield(L,1,"id"),numdata;
 
-	//find pipe name
-	id = l_getintfield(L,1,"id");
-
-	particle_mutex_lock(m);
-
-	//get current pipe
-	if(pipe_get_pipe(id)) {
+		particle_mutex_lock(m);
+		pipe_send(L,id,1);
+		numdata = pipe_receive(L,id);
 		particle_mutex_unlock(m);
-		luaL_error(L,"There are no pipe with id %d",id);
-		return 0;
+
+		return (int) numdata;
 	}
 
-	i = lua_objlen(pipes,-1);
-
-	for(; j <= numdata; ++j) {
-		lua_pushnumber(pipes,++i);
-		zenith_transfer_data(L,pipes,j);
-		lua_settable(pipes,-3);
-	}
-
-	d = &data[id-1];
-	d->num_data += numdata - 1;
-	if(!data->v) data->v = particle_condition_var_new(m);
-	particle_condition_var_sleep(data->v);
-
-	lua_pop(pipes,1); // pop the pipe
-
-	particle_mutex_unlock(m);
-
-	lua_pop(L,numdata-1);
-
-	return zenith_pipe_receive(L);
+	return 0;
 }
 
 static inline void access_table(lua_State *L)
