@@ -20,14 +20,6 @@ void copy_table(lua_State *from, lua_State *to, int idx)
 
 	lua_newtable(to);
 
-	/*lua_getmetatable(L,index);
-	if(lua_isnil(L,index)) {
-		printf("nil\n");
-	} else {
-		printf( "%p\n", lua_topointer(L,index));
-	}
-	lua_pop(L,1);*/
-
 	lua_pushnil(from);
 
 	while (lua_next(from,idx)) {
@@ -40,6 +32,26 @@ void copy_table(lua_State *from, lua_State *to, int idx)
 
 		lua_pop(from, 1);
 	}
+
+	lua_getmetatable(from,idx);
+	if(! lua_isnil(from,-1)) {
+		copy_table(from,to,-1);
+
+		lua_setmetatable(to,-2);
+	}
+	lua_pop(from,1);
+}
+
+static void (*tbl_cpy)(lua_State *from, lua_State *to, int idx) = copy_table;
+
+void zenith_transfer_set_table_transfer_method(void (*cpy)(lua_State *from, lua_State *to, int idx))
+{
+	tbl_cpy = cpy;
+}
+
+void zenith_transfer_set_default_table_transfer_method()
+{
+	tbl_cpy = copy_table;
 }
 
 void copy_function(lua_State *from, lua_State *to, int idx)
@@ -91,7 +103,8 @@ void zenith_transfer_data(lua_State *from, lua_State *to, int idx)
 	} else if(type == LUA_TSTRING) {
 		lua_pushstring(to,lua_tostring(from,idx));
 	} else if(type == LUA_TTABLE) {
-		copy_table(from,to,idx);
+		if(tbl_cpy) tbl_cpy(from,to,idx);
+		else lua_pushnil(to);
 	} else if(type == LUA_TFUNCTION) {
 		copy_function(from,to,idx);
 	} else if(type == LUA_TUSERDATA) {
