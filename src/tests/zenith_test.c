@@ -16,8 +16,7 @@ size_t test1(void *param) {
 size_t test2(void *param) {
 	lua_State *L = (lua_State *) param;
 
-	l_parse(L,"local p = Zenith.Pipe.pipes.test while not p:receive() do end p:send('bleh')");
-
+	l_parse(L,"local p = Zenith.Pipe.pipes.test local val = p:receive() while not val do val = p:receive() end print(val) p:send('bleh')");
 
 	return 0;
 }
