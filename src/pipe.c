@@ -87,8 +87,6 @@ static inline void pipe_send(lua_State *L, size_t id, unsigned char wait)
 	if(wait) {
 		if(!data->v) data->v = particle_condition_var_new(m);
 		particle_condition_var_sleep(data->v);
-	} else if(data->v) {
-		particle_condition_var_wake(data->v);
 	}
 }
 
@@ -100,14 +98,16 @@ int zenith_pipe_send(lua_State *L)
 	// 3 - data
 	// ...
 
-	if(lua_gettop(L) > 1) {
-		//find pipe id
-		size_t id = l_getintfield(L,1,"id");
+	//find pipe id
+	size_t id = l_getintfield(L,1,"id");
 
+	if(lua_gettop(L) > 1) {
 		particle_mutex_lock(m);
 		pipe_send(L,id,0);
 		particle_mutex_unlock(m);
 	}
+
+	if(data->v) particle_condition_var_wake(data->v);
 
 	return 0;
 }
@@ -155,6 +155,8 @@ static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char to_tabl
 		//printf("received\n");
 
 		lua_pop(pipes,1); // pop the pipe
+	} else {
+		lua_pushnil(L);
 	}
 
 	return to_table ? 1 : numdata;
