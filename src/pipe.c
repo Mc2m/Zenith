@@ -117,9 +117,9 @@ static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char to_tabl
 	size_t numdata = data[id-1].num_data;
 	size_t j = numdata, i = 1;
 
-	if(to_table) lua_createtable(L,0,numdata);
-
 	if(numdata) {
+		if(to_table) lua_createtable(L,0,numdata);
+
 		//printf("receiving\n");
 
 		//get the pipe
@@ -157,6 +157,7 @@ static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char to_tabl
 		lua_pop(pipes,1); // pop the pipe
 	} else {
 		lua_pushnil(L);
+		numdata = 1;
 	}
 
 	return to_table ? 1 : numdata;
