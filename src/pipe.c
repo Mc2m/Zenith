@@ -96,13 +96,14 @@ static inline void pipe_send(lua_State *L, size_t id, unsigned char wait)
 		lua_pop(pipes,1); // pop the pipe
 
 		//printf("sent\n");
+	}
 
-		if(wait) {
-			d->waiting = L;
-			if(!data->v) data->v = particle_condition_var_new(m);
-			particle_condition_var_sleep(data->v);
-			d->waiting = 0;
-		}
+	if(wait) {
+		d->waiting = L;
+		if(!data->v) data->v = particle_condition_var_new(m);
+		else particle_condition_var_wake(data->v);
+		particle_condition_var_sleep(data->v);
+		if(d->waiting == L) d->waiting = 0;
 	}
 }
 
@@ -223,9 +224,8 @@ int zenith_pipe_send_wait(lua_State *L)
 		size_t id = l_getintfield(L,1,"id");
 		int numdata = lua_gettop(L);
 
-		data[id-1].wants_table = 0;
-
 		particle_mutex_lock(m);
+		data[id-1].wants_table = 0;
 		pipe_send(L,id,1);
 		particle_mutex_unlock(m);
 
@@ -248,22 +248,82 @@ int zenith_pipe_send_wait_table(lua_State *L)
 		size_t id = l_getintfield(L,1,"id");
 		int numdata = lua_gettop(L);
 
-		data[id-1].wants_table = 1;
-
 		particle_mutex_lock(m);
+		data[id-1].wants_table = 1;
 		pipe_send(L,id,1);
 		particle_mutex_unlock(m);
 
 		return lua_gettop(L) - numdata;
 	}
 
+	if(data->v) particle_condition_var_wake(data->v);
+
 	return 0;
+}
+
+int zenith_pipe_listen(lua_State *L)
+{
+	// STACK
+	// 1 - pipe obj
+
+	//find pipe id
+	size_t id = l_getintfield(L,1,"id");
+	PipeData *d = &data[id-1];
+	size_t numdata;
+
+	particle_mutex_lock(m);
+
+	if(data[id-1].num_data) {
+		numdata = pipe_receive(L,id,0);
+	} else {
+		d->wants_table = 0;
+		d->waiting = L;
+		if(!data->v) data->v = particle_condition_var_new(m);
+		particle_condition_var_sleep(data->v);
+		if(d->waiting == L) d->waiting = 0;
+		numdata = lua_gettop(L) - 1;
+	}
+	
+	particle_mutex_unlock(m);
+
+	return numdata;
+}
+
+int zenith_pipe_listen_table(lua_State *L)
+{
+	// STACK
+	// 1 - pipe obj
+	// 2 - data
+	// 3 - data
+	// ...
+
+	size_t id = l_getintfield(L,1,"id");
+	PipeData *d = &data[id-1];
+	size_t numdata;
+
+	particle_mutex_lock(m);
+
+	if(data[id-1].num_data) {
+		numdata = pipe_receive(L,id,1);
+	} else {
+		d->wants_table = 1;
+		d->waiting = L;
+		if(!data->v) data->v = particle_condition_var_new(m);
+		particle_condition_var_sleep(data->v);
+		d->waiting = 0;
+		numdata = lua_gettop(L) - 1;
+	}
+	
+	particle_mutex_unlock(m);
+
+	return numdata;
 }
 
 static inline void table_table(lua_State *L)
 {
 	l_setfunctionfield(L,-1,"wait",zenith_pipe_send_wait_table);
 	l_setfunctionfield(L,-1,"receive",zenith_pipe_receive_table);
+	l_setfunctionfield(L,-1,"listen",zenith_pipe_listen_table);
 }
 
 static inline void access_table(lua_State *L)
@@ -272,6 +332,7 @@ static inline void access_table(lua_State *L)
 
 	l_setfunctionfield(L,-1,"send",zenith_pipe_send);
 	l_setfunctionfield(L,-1,"wait",zenith_pipe_send_wait);
+	l_setfunctionfield(L,-1,"listen",zenith_pipe_listen);
 	l_setfunctionfield(L,-1,"receive",zenith_pipe_receive);
 	l_settablefield(L,-1,"table",table_table);
 
