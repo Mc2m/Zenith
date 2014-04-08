@@ -28,7 +28,6 @@ void copy_table(lua_State *from, lua_State *to, int idx)
 		zenith_transfer_data(from,to,-1);
 
 		lua_settable(to,-3);
-		l_print_table(to,1);
 
 		lua_pop(from, 1);
 	}
