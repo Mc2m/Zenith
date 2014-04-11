@@ -127,6 +127,9 @@ void zenith_pipe_custom_send(lua_State *L, int idx, void (*cpy)(lua_State *from,
 	}
 
 	if(data->v) particle_condition_var_wake(data->v);
+
+	//consume the elements
+	lua_pop(L,lua_gettop(L) - idx + 1);
 }
 
 int zenith_pipe_send(lua_State *L)
