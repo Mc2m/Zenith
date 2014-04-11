@@ -109,14 +109,8 @@ static inline void pipe_send(lua_State *L, size_t id, unsigned char wait, int id
 
 void zenith_pipe_custom_send(lua_State *L, int idx, void (*cpy)(lua_State *from, lua_State *to, int idx))
 {
-	// STACK
-	// 1 - pipe obj
-	// 2 - data
-	// 3 - data
-	// ...
-
 	//find pipe id
-	size_t id = l_getintfield(L,1,"id");
+	size_t id = l_getintfield(L,idx,"id");
 
 	if(lua_gettop(L) > 1) {
 		particle_mutex_lock(m);
