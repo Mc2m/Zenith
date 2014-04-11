@@ -57,9 +57,9 @@ static inline unsigned char pipe_get_pipe(size_t id) {
 	return lua_isnil(pipes,-1);
 }
 
-static inline void pipe_send(lua_State *L, size_t id, unsigned char wait)
+static inline void pipe_send(lua_State *L, size_t id, unsigned char wait, int idx)
 {
-	size_t i, j = 2, numdata = lua_gettop(L);
+	size_t i, j = idx+1, numdata = lua_gettop(L);
 	PipeData *d = &data[id-1];
 
 	//printf("sending\n");
@@ -107,6 +107,28 @@ static inline void pipe_send(lua_State *L, size_t id, unsigned char wait)
 	}
 }
 
+void zenith_pipe_custom_send(lua_State *L, int idx, void (*cpy)(lua_State *from, lua_State *to, int idx))
+{
+	// STACK
+	// 1 - pipe obj
+	// 2 - data
+	// 3 - data
+	// ...
+
+	//find pipe id
+	size_t id = l_getintfield(L,1,"id");
+
+	if(lua_gettop(L) > 1) {
+		particle_mutex_lock(m);
+		zenith_transfer_set_table_transfer_method(cpy);
+		pipe_send(L,id,0,idx);
+		zenith_transfer_set_default_table_transfer_method();
+		particle_mutex_unlock(m);
+	}
+
+	if(data->v) particle_condition_var_wake(data->v);
+}
+
 int zenith_pipe_send(lua_State *L)
 {
 	// STACK
@@ -120,7 +142,7 @@ int zenith_pipe_send(lua_State *L)
 
 	if(lua_gettop(L) > 1) {
 		particle_mutex_lock(m);
-		pipe_send(L,id,0);
+		pipe_send(L,id,0,1);
 		particle_mutex_unlock(m);
 	}
 
@@ -226,7 +248,7 @@ int zenith_pipe_send_wait(lua_State *L)
 
 		particle_mutex_lock(m);
 		data[id-1].wants_table = 0;
-		pipe_send(L,id,1);
+		pipe_send(L,id,1,1);
 		particle_mutex_unlock(m);
 
 		return lua_gettop(L) - numdata;
@@ -250,7 +272,7 @@ int zenith_pipe_send_wait_table(lua_State *L)
 
 		particle_mutex_lock(m);
 		data[id-1].wants_table = 1;
-		pipe_send(L,id,1);
+		pipe_send(L,id,1,1);
 		particle_mutex_unlock(m);
 
 		return lua_gettop(L) - numdata;
