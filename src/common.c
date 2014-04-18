@@ -171,10 +171,13 @@ void l_setintindex(lua_State *L,int arg,int index, int value)
 
 int l_getintindex(lua_State *L,int arg,int index) {
 	int val = 0;
+
+	if(arg < 0 && arg != LUA_REGISTRYINDEX) arg -= 2;
 	lua_pushnumber(L,index);
 	lua_gettable(L,arg);
 	val = luaL_checkint(L,-1);
 	lua_pop(L,1);
+
 	return val;
 }
 

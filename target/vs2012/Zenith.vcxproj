@@ -80,6 +80,7 @@
     <ClCompile Include="..\..\src\stdafx.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\..\src\structures\Array.c" />
     <ClCompile Include="..\..\src\table.c" />
     <ClCompile Include="..\..\src\transfer.c" />
     <ClCompile Include="..\..\src\zenith.c" />
@@ -90,6 +91,7 @@
     <ClInclude Include="..\..\src\pipe.h" />
     <ClInclude Include="..\..\src\state.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
+    <ClInclude Include="..\..\src\structures\Array.h" />
     <ClInclude Include="..\..\src\table.h" />
     <ClInclude Include="..\..\src\transfer.h" />
     <ClInclude Include="..\..\src\zenith.h" />

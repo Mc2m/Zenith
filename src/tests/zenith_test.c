@@ -8,7 +8,7 @@
 size_t test1(void *param) {
 	lua_State *L = (lua_State *) param;
 
-	l_parse(L,"local res = Zenith.Pipe.pipes.test:wait(3) if res then print(res) else print('nil') end");
+	l_parse(L,"Zenith.Pipe.pipes.test:send('bleh',nil,'test') Zenith.Pipe.pipes.test:send(3)");
 
 	return 0;
 }
@@ -16,7 +16,7 @@ size_t test1(void *param) {
 size_t test2(void *param) {
 	lua_State *L = (lua_State *) param;
 
-	l_parse(L,"local p = Zenith.Pipe.pipes.test local val = p:listen() print(val) p:send('bleh')");
+	l_parse(L,"local p = Zenith.Pipe.pipes.test local val = p:listen(0) local val = p:listen(0) print(val)");
 
 	return 0;
 }
@@ -38,9 +38,9 @@ int main(int argc, char **argv)
 	zenith_pipe_create(L1,L2,"test");
 
 	thread1 = particle_thread_create(test1,L1);
-	thread2 = particle_thread_create(test2,L2);
-
 	particle_thread_join(thread1);
+
+	thread2 = particle_thread_create(test2,L2);
 	particle_thread_join(thread2);
 
 	zenith_pipe_destroy();
