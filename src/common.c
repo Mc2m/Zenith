@@ -4,6 +4,8 @@
 #include "common.h"
 #include "state.h"
 
+#include <string.h>
+
 #define INDEX_CHECK(i) (i < 0 && i != LUA_REGISTRYINDEX ? --i : i)
 #define INDEX_RESTORE(i) (i < 0 && i != LUA_REGISTRYINDEX ? i++ : i)
 

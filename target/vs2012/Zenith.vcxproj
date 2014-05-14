@@ -49,7 +49,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>../../src;../../contrib/luajit/src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src;../../contrib/luajit/src;../../contrib/terra/src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS</PreprocessorDefinitions>
@@ -74,24 +74,20 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\common.c" />
-    <ClCompile Include="..\..\src\particle\particle.c" />
     <ClCompile Include="..\..\src\pipe.c" />
     <ClCompile Include="..\..\src\state.c" />
     <ClCompile Include="..\..\src\stdafx.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\src\structures\Array.c" />
     <ClCompile Include="..\..\src\table.c" />
     <ClCompile Include="..\..\src\transfer.c" />
     <ClCompile Include="..\..\src\zenith.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\common.h" />
-    <ClInclude Include="..\..\src\particle\particle.h" />
     <ClInclude Include="..\..\src\pipe.h" />
     <ClInclude Include="..\..\src\state.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
-    <ClInclude Include="..\..\src\structures\Array.h" />
     <ClInclude Include="..\..\src\table.h" />
     <ClInclude Include="..\..\src\transfer.h" />
     <ClInclude Include="..\..\src\zenith.h" />
@@ -103,6 +99,11 @@
     <Library Include="..\..\contrib\lua51d.lib">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\contrib\terra\target\VS2012\Terra.vcxproj">
+      <Project>{58a31a79-8ed4-460b-9e9d-ab840b8e91d5}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

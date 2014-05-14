@@ -8,20 +8,20 @@
 
 #include "transfer.h"
 
-#include "structures/Array.h"
-#include "particle/particle.h"
+#include "structure/TArray.h"
+#include "thread/tthread.h"
 
 typedef struct _PipeData {
 	size_t num_data;
-	PCV *v;
+	TCV *v;
 	lua_State *waiting;
 	unsigned char wants_table;
-	Array *localnumdata;
+	TArray *localnumdata;
 } PipeData;
 
 lua_State *pipes = 0;
-ParticleMutex *m = 0;
-Array *data = 0;
+TMutex *m = 0;
+TArray *data = 0;
 size_t next_id = 1;
 
 static PipeData *pipedata_new(void)
@@ -32,7 +32,7 @@ static PipeData *pipedata_new(void)
 	p->v = 0;
 	p->waiting = 0;
 	p->wants_table = 0;
-	p->localnumdata = array_new(0);
+	p->localnumdata = TArrayNew(0);
 
 	return p;
 }
@@ -40,8 +40,8 @@ static PipeData *pipedata_new(void)
 static void pipedata_free(PipeData *p)
 {
 	if(p) {
-		particle_condition_var_free(p->v);
-		array_free(p->localnumdata,free);
+		TCVFree(p->v);
+		TArrayFree(p->localnumdata,free);
 		free(p);
 	}
 }
@@ -49,14 +49,14 @@ static void pipedata_free(PipeData *p)
 void zenith_pipe_initialize(void)
 {
 	pipes = lua_open();
-	m = particle_mutex_new(PARTICLE_MUTEX_TYPE_RECURSIVE);
+	m = TMutexNew(T_MUTEX_RECURSIVE);
 
 	luaL_openlibs(pipes);
 
 	lua_newtable(pipes); // table containing pipes
 	l_getElement(pipes,"table","remove",0); // table.remove must stay on top of the stack
 
-	data = array_new(0);
+	data = TArrayNew(0);
 }
 
 void zenith_pipe_destroy(void)
@@ -64,11 +64,11 @@ void zenith_pipe_destroy(void)
 	size_t i = 0;
 
 	lua_close(pipes);
-	particle_mutex_free(m);
+	TMutexFree(m);
 	pipes = 0;
 	m = 0;
 
-	array_free(data,(void (*) (void *))pipedata_free);
+	TArrayFree(data,(TFreeFunc)pipedata_free);
 	data = 0;
 }
 
@@ -84,7 +84,7 @@ static inline unsigned char pipe_get_pipe(size_t id) {
 static inline void pipe_send(lua_State *L, size_t id, unsigned char wait, int idx)
 {
 	size_t i, j = idx+1, numdata = lua_gettop(L);
-	PipeData *d = (PipeData *) array_get(data,id-1);
+	PipeData *d = (PipeData *) TArrayGet(data,id-1);
 
 	//printf("sending\n");
 
@@ -105,7 +105,7 @@ static inline void pipe_send(lua_State *L, size_t id, unsigned char wait, int id
 
 		//get current pipe
 		if(pipe_get_pipe(id)) {
-			particle_mutex_unlock(m);
+			TMutexUnlock(m);
 			luaL_error(L,"There are no pipe with id %d",id);
 			return;
 		}
@@ -113,7 +113,7 @@ static inline void pipe_send(lua_State *L, size_t id, unsigned char wait, int id
 		i = d->num_data;
 
 		// keep local numdata
-		array_push(d->localnumdata,ptr);
+		TArrayPush(d->localnumdata,ptr);
 
 		for(; j <= numdata; ++j) {
 			lua_pushnumber(pipes,++i);
@@ -130,9 +130,9 @@ static inline void pipe_send(lua_State *L, size_t id, unsigned char wait, int id
 
 	if(wait) {
 		d->waiting = L;
-		if(!d->v) d->v = particle_condition_var_new(m);
-		else particle_condition_var_wake(d->v);
-		particle_condition_var_sleep(d->v);
+		if(!d->v) d->v = TCVNew(m);
+		else TCVWake(d->v);
+		TCVSleep(d->v);
 		if(d->waiting == L) d->waiting = 0;
 	}
 }
@@ -141,17 +141,17 @@ void zenith_pipe_custom_send(lua_State *L, int idx, void (*cpy)(lua_State *from,
 {
 	//find pipe id
 	size_t id = l_getintfield(L,idx,"id");
-	PipeData *d = (PipeData *) array_get(data,id-1);
+	PipeData *d = (PipeData *) TArrayGet(data,id-1);
 
 	if(lua_gettop(L) > 1) {
-		particle_mutex_lock(m);
+		TMutexLock(m);
 		zenith_transfer_set_table_transfer_method(cpy);
 		pipe_send(L,id,0,idx);
 		zenith_transfer_set_default_table_transfer_method();
-		particle_mutex_unlock(m);
+		TMutexUnlock(m);
 	}
 
-	if(d->v) particle_condition_var_wake(d->v);
+	if(d->v) TCVWake(d->v);
 
 	//consume the elements
 	lua_pop(L,lua_gettop(L) - idx + 1);
@@ -167,22 +167,22 @@ int zenith_pipe_send(lua_State *L)
 
 	//find pipe id
 	size_t id = l_getintfield(L,1,"id");
-	PipeData *d = (PipeData *) array_get(data,id-1);
+	PipeData *d = (PipeData *) TArrayGet(data,id-1);
 
 	if(lua_gettop(L) > 1) {
-		particle_mutex_lock(m);
+		TMutexLock(m);
 		pipe_send(L,id,0,1);
-		particle_mutex_unlock(m);
+		TMutexUnlock(m);
 	}
 
-	if(d->v) particle_condition_var_wake(d->v);
+	if(d->v) TCVWake(d->v);
 
 	return 0;
 }
 
 static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char to_table, unsigned char receive_all)
 {
-	PipeData *d = (PipeData *) array_get(data,id-1);
+	PipeData *d = (PipeData *) TArrayGet(data,id-1);
 	size_t numdata = d->num_data;
 
 	if(numdata) {
@@ -194,7 +194,7 @@ static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char to_tabl
 
 		//get the pipe
 		if(pipe_get_pipe(id)) {
-			particle_mutex_unlock(m);
+			TMutexUnlock(m);
 			lua_pop(L,1);
 			luaL_error(L,"There are no pipe with id %d",id);
 			return 0;
@@ -204,9 +204,9 @@ static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char to_tabl
 		numdata = 0;
 
 		if(receive_all) {
-			array_empty(d->localnumdata,free);
+			TArrayEmpty(d->localnumdata,free);
 		} else {
-			int *amount = (int *) array_pop(d->localnumdata,0);
+			int *amount = (int *) TArrayPopIndex(d->localnumdata,0);
 			j = *amount;
 			free(amount);
 		}
@@ -253,9 +253,9 @@ int zenith_pipe_receive(lua_State *L)
 	size_t id = l_getintfield(L,1,"id"),numdata;
 	unsigned char opt = luaL_optint(L,2,1);
 
-	particle_mutex_lock(m);
+	TMutexLock(m);
 	numdata = pipe_receive(L,id,0,opt);
-	particle_mutex_unlock(m);
+	TMutexUnlock(m);
 
 	return (int) numdata;
 }
@@ -270,9 +270,9 @@ int zenith_pipe_receive_table(lua_State *L)
 	size_t id = l_getintfield(L,1,"id"),numdata;
 	unsigned char opt = luaL_optint(L,2,1);
 
-	particle_mutex_lock(m);
+	TMutexLock(m);
 	numdata = pipe_receive(L,id,1,opt);
-	particle_mutex_unlock(m);
+	TMutexUnlock(m);
 
 	return (int) numdata;
 }
@@ -288,13 +288,13 @@ int zenith_pipe_send_wait(lua_State *L)
 	if(lua_gettop(L) > 1) {
 		//find pipe id
 		size_t id = l_getintfield(L,1,"id");
-		PipeData *d = (PipeData *) array_get(data,id-1);
+		PipeData *d = (PipeData *) TArrayGet(data,id-1);
 		int numdata = lua_gettop(L);
 
-		particle_mutex_lock(m);
+		TMutexLock(m);
 		d->wants_table = 0;
 		pipe_send(L,id,1,1);
-		particle_mutex_unlock(m);
+		TMutexUnlock(m);
 
 		return lua_gettop(L) - numdata;
 	}
@@ -311,21 +311,21 @@ int zenith_pipe_send_wait_table(lua_State *L)
 	// ...
 
 	size_t id = l_getintfield(L,1,"id");
-	PipeData *d = (PipeData *) array_get(data,id-1);
+	PipeData *d = (PipeData *) TArrayGet(data,id-1);
 
 	if(lua_gettop(L) > 1) {
 		//find pipe id
 		int numdata = lua_gettop(L);
 
-		particle_mutex_lock(m);
+		TMutexLock(m);
 		d->wants_table = 1;
 		pipe_send(L,id,1,1);
-		particle_mutex_unlock(m);
+		TMutexUnlock(m);
 
 		return lua_gettop(L) - numdata;
 	}
 
-	if(d->v) particle_condition_var_wake(d->v);
+	if(d->v) TCVWake(d->v);
 
 	return 0;
 }
@@ -338,24 +338,24 @@ int zenith_pipe_listen(lua_State *L)
 
 	//find pipe id
 	size_t id = l_getintfield(L,1,"id");
-	PipeData *d = (PipeData *) array_get(data,id-1);
+	PipeData *d = (PipeData *) TArrayGet(data,id-1);
 	size_t numdata;
 	unsigned char opt = luaL_optint(L,2,1);
 
-	particle_mutex_lock(m);
+	TMutexLock(m);
 
 	if(d->num_data) {
 		numdata = pipe_receive(L,id,0,opt);
 	} else {
 		d->wants_table = 0;
 		d->waiting = L;
-		if(!d->v) d->v = particle_condition_var_new(m);
-		particle_condition_var_sleep(d->v);
+		if(!d->v) d->v = TCVNew(m);
+		TCVSleep(d->v);
 		if(d->waiting == L) d->waiting = 0;
 		numdata = lua_gettop(L) - 1;
 	}
 	
-	particle_mutex_unlock(m);
+	TMutexUnlock(m);
 
 	return numdata;
 }
@@ -369,24 +369,24 @@ int zenith_pipe_listen_table(lua_State *L)
 	// ...
 
 	size_t id = l_getintfield(L,1,"id");
-	PipeData *d = (PipeData *) array_get(data,id-1);
+	PipeData *d = (PipeData *) TArrayGet(data,id-1);
 	size_t numdata;
 	unsigned char opt = luaL_optint(L,2,1);
 
-	particle_mutex_lock(m);
+	TMutexLock(m);
 
 	if(d->num_data) {
 		numdata = pipe_receive(L,id,1,opt);
 	} else {
 		d->wants_table = 1;
 		d->waiting = L;
-		if(!d->v) d->v = particle_condition_var_new(m);
-		particle_condition_var_sleep(d->v);
+		if(!d->v) d->v = TCVNew(m);
+		TCVSleep(d->v);
 		d->waiting = 0;
 		numdata = lua_gettop(L) - 1;
 	}
 	
-	particle_mutex_unlock(m);
+	TMutexUnlock(m);
 
 	return numdata;
 }
@@ -489,13 +489,13 @@ void zenith_pipe_create(lua_State *L1,lua_State *L2, const char *name)
 	}
 
 	//set pipe
-	particle_mutex_lock(m);
+	TMutexLock(m);
 	lua_pushinteger(pipes,next_id);
 	lua_newtable(pipes);
 	lua_settable(pipes,1);
 
-	array_push(data,pipedata_new());
-	particle_mutex_unlock(m);
+	TArrayPush(data,pipedata_new());
+	TMutexUnlock(m);
 
 	set_pipe_table(L1,name);
 	set_pipe_table(L2,name);

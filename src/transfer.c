@@ -4,6 +4,8 @@
 #include "common.h"
 #include "transfer.h"
 
+#include "debugging/tdebug.h"
+
 static int function_cpy(lua_State *L,const char *p,size_t size,luaL_Buffer *B)
 {
 	luaL_addlstring(B,p,size);
@@ -89,7 +91,7 @@ void zenith_transfer_data(lua_State *from, lua_State *to, int idx)
 {
 	int type = lua_type(from,idx);
 
-	assert(lua_checkstack(to,1));
+	TAssert(lua_checkstack(to,1));
 
 	if(type == LUA_TNIL) {
 		lua_pushnil(to);

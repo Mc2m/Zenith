@@ -4,6 +4,8 @@
 #include "common.h"
 #include "state.h"
 
+#include <string.h>
+
 size_t num_states = 0;
 lua_State **states = 0;
 char **names = 0;

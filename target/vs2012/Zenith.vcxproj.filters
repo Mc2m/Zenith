@@ -8,12 +8,6 @@
     <ClCompile Include="..\..\src\table.c" />
     <ClCompile Include="..\..\src\transfer.c" />
     <ClCompile Include="..\..\src\zenith.c" />
-    <ClCompile Include="..\..\src\particle\particle.c">
-      <Filter>particle</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\structures\Array.c">
-      <Filter>structures</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\common.h" />
@@ -23,23 +17,9 @@
     <ClInclude Include="..\..\src\table.h" />
     <ClInclude Include="..\..\src\transfer.h" />
     <ClInclude Include="..\..\src\zenith.h" />
-    <ClInclude Include="..\..\src\particle\particle.h">
-      <Filter>particle</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\structures\Array.h">
-      <Filter>structures</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\contrib\lua51.lib" />
     <Library Include="..\..\contrib\lua51d.lib" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="particle">
-      <UniqueIdentifier>{10c490ee-c2bc-4144-9725-bb3c960c54b9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="structures">
-      <UniqueIdentifier>{94b190b2-37a1-47f8-8ad5-f64e9a902886}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
 </Project>

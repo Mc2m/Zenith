@@ -20,26 +20,13 @@
 // __STDC__ disables the following definitions in the C headers
 #define strdup _strdup
 #define stricmp _stricmp
-
-#include <windows.h>
-#include <conio.h>
-#include <io.h>
-
-#else
-
-#include <pthread.h>
 #endif
 
-#include <assert.h>
-
-#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include <luajit.h>
 #include <lauxlib.h>
 #include <lualib.h>
-
-//#include "particle/particle.h"
 
 #endif // __included_stdafx_h

@@ -3,9 +3,9 @@
 
 #include "zenith.h"
 
-#include "particle/particle.h"
+#include "thread/tthread.h"
 
-size_t test1(void *param) {
+int test1(void *param) {
 	lua_State *L = (lua_State *) param;
 
 	l_parse(L,"Zenith.Pipe.pipes.test:send('bleh',nil,'test') Zenith.Pipe.pipes.test:send(3)");
@@ -13,7 +13,7 @@ size_t test1(void *param) {
 	return 0;
 }
 
-size_t test2(void *param) {
+int test2(void *param) {
 	lua_State *L = (lua_State *) param;
 
 	l_parse(L,"local p = Zenith.Pipe.pipes.test local val = p:listen(0) local val = p:listen(0) print(val)");
@@ -23,7 +23,7 @@ size_t test2(void *param) {
 
 int main(int argc, char **argv)
 {
-	ParticleThread *thread1, *thread2;
+	TThread *thread1, *thread2;
 	lua_State *L1,*L2;
 
 	zenith_state_initialize(2);
@@ -37,11 +37,11 @@ int main(int argc, char **argv)
 
 	zenith_pipe_create(L1,L2,"test");
 
-	thread1 = particle_thread_create(test1,L1);
-	particle_thread_join(thread1);
+	thread1 = TThreadCreate(test1,L1);
+	TThreadJoin(thread1);
 
-	thread2 = particle_thread_create(test2,L2);
-	particle_thread_join(thread2);
+	thread2 = TThreadCreate(test2,L2);
+	TThreadJoin(thread2);
 
 	zenith_pipe_destroy();
 	zenith_state_destroy();
