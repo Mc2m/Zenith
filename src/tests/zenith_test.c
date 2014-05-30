@@ -16,7 +16,7 @@ int test1(void *param) {
 int test2(void *param) {
 	lua_State *L = (lua_State *) param;
 
-	l_parse(L,"local p = Zenith.Pipe.pipes.test local val = p:listen(0) local val = p:listen(0) print(val)");
+	l_parse(L,"local p = Zenith.Pipe.pipes.test local val = p:listen(1000,0) print(val) local val = p:listen(1000,0) print(val)");
 
 	return 0;
 }
