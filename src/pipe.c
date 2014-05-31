@@ -15,7 +15,6 @@ typedef struct _PipeData {
 	size_t num_data;
 	TCV *v;
 	lua_State *waiting;
-	unsigned char wants_table;
 	TArray *localnumdata;
 } PipeData;
 
@@ -35,7 +34,6 @@ static PipeData *pipedata_new(void)
 	p->num_data = 0;
 	p->v = 0;
 	p->waiting = 0;
-	p->wants_table = 0;
 	p->localnumdata = TArrayNew(0);
 
 	return p;
@@ -105,15 +103,7 @@ static inline void pipe_send(lua_State *L, size_t id, size_t wait, int idx)
 
 	if(d->waiting) {
 		// copy the sent data directly
-		if(d->wants_table) {
-			i = 1;
-			lua_createtable(d->waiting,0,numdata-1);
-			for(; j <= numdata; ++j) {
-				lua_pushnumber(d->waiting,i++);
-				zenith_transfer_data(L,d->waiting,j);
-				lua_settable(d->waiting,-3);
-			}
-		} else for(; j <= numdata; ++j) zenith_transfer_data(L,d->waiting,j);
+		for(; j <= numdata; ++j) zenith_transfer_data(L,d->waiting,j);
 	} else {
 		int *ptr = (int *) malloc(sizeof(int));
 		*ptr = numdata - 1;
@@ -199,15 +189,13 @@ int zenith_pipe_send(lua_State *L)
 	return 0;
 }
 
-static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char to_table, unsigned char receive_all)
+static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char receive_all)
 {
 	PipeData *d = (PipeData *) TArrayGet(zenithpipes->data,id-1);
 	size_t numdata = d->num_data;
 
 	if(numdata) {
 		size_t j = numdata, i = 1;
-
-		if(to_table) lua_createtable(L,0,numdata);
 
 		//printf("receiving\n");
 
@@ -237,13 +225,7 @@ static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char to_tabl
 			lua_pushnumber(zenithpipes->pipes,1); // id
 			lua_call(zenithpipes->pipes,2,1);
 
-			if(to_table) {
-				lua_pushnumber(L,i++);
-				zenith_transfer_data(zenithpipes->pipes,L,-1);
-				lua_settable(L,-3);
-			} else {
-				zenith_transfer_data(zenithpipes->pipes,L,-1);
-			}
+			zenith_transfer_data(zenithpipes->pipes,L,-1);
 			numdata++;
 
 			lua_pop(zenithpipes->pipes,1);
@@ -255,7 +237,7 @@ static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char to_tabl
 
 		lua_pop(zenithpipes->pipes,1); // pop the pipe
 
-		return to_table ? 1 : numdata;
+		return numdata;
 	}
 
 	return 0;
@@ -274,28 +256,7 @@ int zenith_pipe_receive(lua_State *L)
 		unsigned char opt = luaL_optint(L,2,1);
 
 		TMutexLock(zenithpipes->m);
-		numdata = pipe_receive(L,id,0,opt);
-		TMutexUnlock(zenithpipes->m);
-
-		return (int) numdata;
-	}
-
-	return 0;
-}
-
-int zenith_pipe_receive_table(lua_State *L)
-{
-	if(zenithpipes) {
-		// STACK
-		// 1 pipe object
-
-		//find pipe name
-
-		size_t id = l_getintfield(L,1,"id"),numdata;
-		unsigned char opt = luaL_optint(L,2,1);
-
-		TMutexLock(zenithpipes->m);
-		numdata = pipe_receive(L,id,1,opt);
+		numdata = pipe_receive(L,id,opt);
 		TMutexUnlock(zenithpipes->m);
 
 		return (int) numdata;
@@ -322,44 +283,11 @@ int zenith_pipe_send_wait(lua_State *L)
 			int numdata = lua_gettop(L);
 
 			TMutexLock(zenithpipes->m);
-			d->wants_table = 0;
 			pipe_send(L,id,timeout,2);
 			TMutexUnlock(zenithpipes->m);
 
 			return lua_gettop(L) - numdata;
 		}
-	}
-
-	return 0;
-}
-
-int zenith_pipe_send_wait_table(lua_State *L)
-{
-	if(zenithpipes) {
-		// STACK
-		// 1 - pipe obj
-		// 2 - timeout
-		// 3 - data
-		// 4 - data
-		// ...
-
-		size_t id = l_getintfield(L,1,"id");
-		PipeData *d = (PipeData *) TArrayGet(zenithpipes->data,id-1);
-		size_t timeout = luaL_checkint(L,2);
-
-		if(lua_gettop(L) > 1) {
-			//find pipe id
-			int numdata = lua_gettop(L);
-
-			TMutexLock(zenithpipes->m);
-			d->wants_table = 1;
-			pipe_send(L,id,timeout,2);
-			TMutexUnlock(zenithpipes->m);
-
-			return lua_gettop(L) - numdata;
-		}
-
-		if(d->v) TCVWake(d->v);
 	}
 
 	return 0;
@@ -383,9 +311,8 @@ int zenith_pipe_listen(lua_State *L)
 		TMutexLock(zenithpipes->m);
 
 		if(d->num_data) {
-			numdata = pipe_receive(L,id,0,opt);
+			numdata = pipe_receive(L,id,opt);
 		} else {
-			d->wants_table = 0;
 			d->waiting = L;
 			if(!d->v) d->v = TCVNew(zenithpipes->m);
 			TCVSleep(d->v,timeout);
@@ -401,49 +328,6 @@ int zenith_pipe_listen(lua_State *L)
 	return 0;
 }
 
-int zenith_pipe_listen_table(lua_State *L)
-{
-	if(zenithpipes) {
-		// STACK
-		// 1 - pipe obj
-		// 2 - timeout
-		// 2 - data
-		// 3 - data
-		// ...
-
-		size_t id = l_getintfield(L,1,"id");
-		PipeData *d = (PipeData *) TArrayGet(zenithpipes->data,id-1);
-		size_t numdata;
-		size_t timeout = luaL_checkint(L,2);
-		unsigned char opt = luaL_optint(L,2,1);
-
-		TMutexLock(zenithpipes->m);
-
-		if(d->num_data) {
-			numdata = pipe_receive(L,id,1,opt);
-		} else {
-			d->wants_table = 1;
-			d->waiting = L;
-			if(!d->v) d->v = TCVNew(zenithpipes->m);
-			TCVSleep(d->v,timeout);
-			d->waiting = 0;
-			numdata = lua_gettop(L) - 1;
-		}
-	
-		TMutexUnlock(zenithpipes->m);
-
-		return numdata;
-		}
-	return 0;
-}
-
-static inline void table_table(lua_State *L)
-{
-	l_setfunctionfield(L,-1,"wait",zenith_pipe_send_wait_table);
-	l_setfunctionfield(L,-1,"receive",zenith_pipe_receive_table);
-	l_setfunctionfield(L,-1,"listen",zenith_pipe_listen_table);
-}
-
 static inline void access_table(lua_State *L)
 {
 	lua_createtable(L,0,3);
@@ -452,7 +336,6 @@ static inline void access_table(lua_State *L)
 	l_setfunctionfield(L,-1,"wait",zenith_pipe_send_wait);
 	l_setfunctionfield(L,-1,"listen",zenith_pipe_listen);
 	l_setfunctionfield(L,-1,"receive",zenith_pipe_receive);
-	l_settablefield(L,-1,"table",table_table);
 
 	lua_pushvalue(L,-1);
 	lua_setfield(L,-2,"__index");
