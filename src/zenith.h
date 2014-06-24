@@ -7,7 +7,7 @@
 
 #include "pipe.h"
 
-void zenith_lib_table(lua_State *L);
-void zenith_lib_state(lua_State *L);
+void ZLibTable(lua_State *L);
+void ZLibState(lua_State *L);
 
 #endif

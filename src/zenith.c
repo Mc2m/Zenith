@@ -21,20 +21,20 @@ void load_zenith_table(lua_State *L)
 	}
 }
 
-void zenith_lib_table(lua_State *L)
+void ZLibTable(lua_State *L)
 {
 	load_zenith_table(L);
 
-	l_settablefield(L, -1, "Table", register_zenith_table);
+	ZSetTableField(L, -1, "Table", ZRegisterTable);
 
 	lua_pop(L,1);
 }
 
-void zenith_lib_state(lua_State *L)
+void ZLibState(lua_State *L)
 {
-	load_zenith_table(L);
+	/*load_zenith_table(L);
 
 	l_settablefield(L, -1, "State", register_zenith_state_table);
 
-	lua_pop(L,1);
+	lua_pop(L,1);*/
 }

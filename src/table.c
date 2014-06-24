@@ -63,7 +63,7 @@ static int table_binary_insert(lua_State *L)
 		lua_gettable(L,1);
 	}
 
-	l_getElement(L,"table","insert",0);
+	ZGetElement(L,"table","insert",0);
 	lua_pushvalue(L,1);
 	lua_pushnumber(L,maxi+1);
 	lua_pushvalue(L,2);
@@ -86,8 +86,8 @@ static int table_help(lua_State *L)
 	return 0;
 }
 
-void register_zenith_table(lua_State *L)
+void ZRegisterTable(lua_State *L)
 {
-	l_setfunctionfield(L, -1, "bin_insert", table_binary_insert);
-	l_setfunctionfield(L, -1, "help"      , table_help);
+	ZSetFunctionField(L, -1, "bin_insert", table_binary_insert);
+	ZSetFunctionField(L, -1, "help"      , table_help);
 }

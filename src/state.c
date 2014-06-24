@@ -6,106 +6,92 @@
 
 #include <string.h>
 
-size_t num_states = 0;
-lua_State **states = 0;
-char **names = 0;
+static size_t num_states = 0;
+static ZState *states = 0;
 
-void zenith_state_set_amount(size_t _num_states)
+void ZStateSetAmount(size_t _num_states)
 {
 	if (num_states < _num_states) {
-		states = (lua_State **) realloc(states,sizeof(lua_State *) * _num_states);
-		memset(states+num_states,0,sizeof(lua_State *) * (_num_states-num_states));
-
-		names = (char **) realloc(names,sizeof(char *) * _num_states);
-		memset(names+num_states,0,sizeof(char *) * (_num_states-num_states));
+		states = (ZState *) realloc(states,sizeof(ZState) * _num_states);
+		memset(states+num_states,0,sizeof(ZState) * (_num_states-num_states));
 
 		num_states = _num_states;
 	} else if (num_states > _num_states) {
 		size_t i = _num_states;
-		for(; i < num_states; ++i) zenith_state_close(i);
+		for(; i < num_states; ++i) ZStateClose(i);
 
-		states = (lua_State **) realloc(states,sizeof(lua_State *) * _num_states);
-		names = (char **) realloc(names,sizeof(char *) * _num_states);
+		states = (ZState *) realloc(states,sizeof(ZState) * _num_states);
 
 		num_states = _num_states;
 	}
 }
 
-void zenith_state_initialize(size_t num_states)
+void ZStateInitialize(size_t num_states)
 {
-	zenith_state_set_amount(num_states);
+	ZStateSetAmount(num_states);
 }
 
-void zenith_state_destroy(void)
+void ZStateDestroy(void)
 {
 	size_t i = 0;
 	for(; i < num_states; ++i) {
-		if(states[i]) {
-			lua_close(states[i]);
-			states[i] = 0;
-
-			free(names[i]);
-			names[i] = 0;
+		if(states[i].L) {
+			lua_close(states[i].L);
+			free(states[i].name);
+			states[i].name = 0;
 		}
 	}
 
 	free(states);
 	states = 0;
 
-	free(names);
-	names = 0;
-
 	num_states = 0;
 }
 
-lua_State *zenith_state_open(size_t idx, const char *name)
+const ZState *ZStateOpen(size_t idx, const char *name)
 {
-	lua_State *L;
+	ZState *S;
 	
 	if (idx >= num_states) return 0;
-	L = states[idx];
-	if(L) return L;
-
-	L = states[idx] = luaL_newstate();
-	l_setintfield(L, LUA_REGISTRYINDEX, "state_idx", idx);
+	S = &states[idx];
+	if(!S->L) {
+		S->L = luaL_newstate();
+		ZSetIntField(S->L, LUA_REGISTRYINDEX, "state_idx", idx);
+	}
 
 	if(name) {
-		free(names[idx]);
-		names[idx] = strdup(name);
+		free(S->name);
+		S->name = strdup(name);
 	}
 
-	return L;
+	return S;
 }
 
-void zenith_state_close(size_t idx)
+void ZStateClose(size_t idx)
 {
-	if (idx < num_states && states[idx]) {
-		lua_close(states[idx]);
-		states[idx] = 0;
+	if (idx < num_states && states[idx].L) {
+		lua_close(states[idx].L);
+		states[idx].L = 0;
 
-		free(names[idx]);
-		names[idx] = 0;
+		free(states[idx].name);
+		states[idx].name = 0;
 	}
 }
 
-lua_State *zenith_state_from_idx(size_t idx)
+const ZState *ZStateFromIdx(size_t idx)
 {
 	if (idx >= num_states) return 0;
-	return states[idx];
+	return &states[idx];
 }
 
-size_t zenith_state_from_state(lua_State *L)
+const ZState *ZStateFromState(lua_State *L, size_t *idx)
 {
-	return l_getintfield(L, LUA_REGISTRYINDEX, "state_idx");
+	size_t index = ZGetIntField(L, LUA_REGISTRYINDEX, "state_idx");
+	if(idx) *idx = index;
+	return ZStateFromIdx(index);
 }
 
-const char *zenith_state_get_name(size_t idx)
+/*void register_zenith_state_table(lua_State *L)
 {
-	if (idx >= num_states) return 0;
-	return names[idx];
-}
-
-void register_zenith_state_table(lua_State *L)
-{
-	//l_settablefield(L, -1, "mutex", register_mutex_functions);
-}
+	l_settablefield(L, -1, "mutex", register_mutex_functions);
+}*/

@@ -9,7 +9,7 @@
 #define INDEX_CHECK(i) (i < 0 && i != LUA_REGISTRYINDEX ? --i : i)
 #define INDEX_RESTORE(i) (i < 0 && i != LUA_REGISTRYINDEX ? i++ : i)
 
-void l_print_var(lua_State *L,int index,unsigned char showtype)
+void ZPrintVar(lua_State *L,int index,unsigned char showtype)
 {
 	int type = lua_type(L, index);
 	if (type == LUA_TSTRING)       printf( "%s", lua_tostring(L,index));
@@ -21,7 +21,7 @@ void l_print_var(lua_State *L,int index,unsigned char showtype)
 	if(showtype) printf( "(%s)", lua_typename(L,type));
 }
 
-void l_print_table(lua_State *L, int index)
+void ZPrintTable(lua_State *L, int index)
 {
 	if(!lua_istable(L,index)) {
 		printf("Warning: variable at index %d of the stack is a %s.\n",index,lua_typename(L,lua_type(L,index)));
@@ -48,9 +48,9 @@ void l_print_table(lua_State *L, int index)
 
 	while (lua_next(L, index)) {
 		/* uses 'key' (at index -2) and 'value' (at index -1) */
-		l_print_var(L, -2, 0);
+		ZPrintVar(L, -2, 0);
 		printf(" - ");
-		l_print_var(L, -1, 0);
+		ZPrintVar(L, -1, 0);
 		printf("\n\t");
 
 		lua_pop(L, 1);
@@ -59,7 +59,7 @@ void l_print_table(lua_State *L, int index)
 	printf("\n===============================\n");
 }
 
-void l_print_stack(lua_State *L)
+void ZPrintStack(lua_State *L)
 {
     int arg_count = lua_gettop( L );
     int i;
@@ -70,7 +70,7 @@ void l_print_stack(lua_State *L)
 
     for ( i = arg_count; i > 0; -- i ) {
 		printf("\n %d : \t",i);
-		l_print_var(L,i,1);
+		ZPrintVar(L,i,1);
     }
 
 	printf("\n===============================\n\n");
@@ -78,35 +78,35 @@ void l_print_stack(lua_State *L)
 
 //------------------------------------------------//
 
-void l_setboolfield (lua_State *L,int index,const char *field, unsigned char value) {
+void ZSetBoolField(lua_State *L,int index,const char *field, unsigned char value) {
 	INDEX_CHECK(index);
 
 	lua_pushboolean(L,value);
 	lua_setfield(L,index,field);
 }
 
-void l_setintfield (lua_State *L,int index,const char *field, int value) {
+void ZSetIntField(lua_State *L,int index,const char *field, int value) {
 	INDEX_CHECK(index);
 
 	lua_pushnumber(L, value);
 	lua_setfield(L,index,field);
 }
 
-void l_setcharfield (lua_State *L,int index,const char *field, const char *value) {
+void ZSetCharField(lua_State *L,int index,const char *field, const char *value) {
 	INDEX_CHECK(index);
 
 	lua_pushstring(L, value);
 	lua_setfield(L,index,field);
 }
 
-void l_setfunctionfield (lua_State *L,int index,const char *field, int (*value)(lua_State *L)) {
+void ZSetFunctionField(lua_State *L,int index,const char *field, int (*value)(lua_State *L)) {
 	INDEX_CHECK(index);
 
 	lua_pushcfunction(L, value);
 	lua_setfield(L,index,field);
 }
 
-void l_settablefield (lua_State *L,int index,const char *field, void (*value)(lua_State *L)) {
+void ZSetTableField(lua_State *L,int index,const char *field, void (*value)(lua_State *L)) {
 	INDEX_CHECK(index);
 
 	lua_newtable(L);
@@ -116,52 +116,52 @@ void l_settablefield (lua_State *L,int index,const char *field, void (*value)(lu
 
 //------------------------------------------------//
 
-unsigned char l_getboolfield(lua_State *L,int arg,const char *index)
+unsigned char ZGetBoolField(lua_State *L,int arg,const char *field)
 {
 	unsigned char val = 0;
-	lua_getfield(L,arg,index);
+	lua_getfield(L,arg,field);
 	luaL_checktype(L,-1,LUA_TBOOLEAN);
 	val = lua_toboolean(L,-1);
 	lua_pop(L,1);
 	return val;
 }
 
-int l_getintfield (lua_State *L,int arg,const char *index) {
+int ZGetIntField (lua_State *L,int arg,const char *field) {
 	int val = 0;
-	lua_getfield(L,arg,index);
+	lua_getfield(L,arg,field);
 	val = luaL_checkint(L,-1);
 	lua_pop(L,1);
 	return val;
 }
 
-double l_getrealfield(lua_State *L,int arg,const char *index)
+double ZGetRealField(lua_State *L,int arg,const char *field)
 {
 	double val = 0;
-	lua_getfield(L,arg,index);
+	lua_getfield(L,arg,field);
 	val = luaL_checknumber(L,-1);
 	lua_pop(L,1);
 	return val;
 }
 
-const char *l_getcharfield (lua_State *L,int arg,const char *index) {
+const char *ZGetCharField(lua_State *L,int arg,const char *field) {
 	const char *val = 0;
-	lua_getfield(L,arg,index);
+	lua_getfield(L,arg,field);
 	val = luaL_checkstring(L,-1);
 	lua_pop(L,1);
 	return val;
 }
 
-const char *l_getoptcharfield (lua_State *L,int arg,const char *index) {
+const char *ZGetCharFieldFull(lua_State *L,int arg,const char *field, size_t *size, const char *def) {
 	const char *val = 0;
-	lua_getfield(L,arg,index);
-	if(lua_isstring(L,-1)) val = lua_tostring(L,-1);
+	lua_getfield(L,arg,field);
+	val = luaL_optlstring(L,-1, def,size);
 	lua_pop(L,1);
 	return val;
 }
 
 //------------------------------------------------//
 
-void l_setintindex(lua_State *L,int arg,int index, int value)
+void ZSetIntIndex(lua_State *L,int arg,int index, int value)
 {
 	if(arg < 0 && arg != LUA_REGISTRYINDEX) arg -= 2;
 	lua_pushinteger(L,index);
@@ -171,7 +171,7 @@ void l_setintindex(lua_State *L,int arg,int index, int value)
 
 //------------------------------------------------//
 
-int l_getintindex(lua_State *L,int arg,int index) {
+int ZGetIntIndex(lua_State *L,int arg,int index) {
 	int val = 0;
 
 	if(arg < 0 && arg != LUA_REGISTRYINDEX) arg -= 2;
@@ -185,7 +185,7 @@ int l_getintindex(lua_State *L,int arg,int index) {
 
 //------------------------------------------------//
 
-void l_getElement(lua_State *L,const char *first_element,...)
+void ZGetElement(lua_State *L,const char *first_element,...)
 {
 	va_list vl;
 	const char *elem;
@@ -221,18 +221,18 @@ static void report(lua_State *L)
 {
 	if (!lua_isnil(L, -1)) {
 		const char *msg = lua_tostring(L, -1);
-		size_t idx = zenith_state_from_state(L);
-		const char *statename = zenith_state_get_name(idx);
+		size_t idx;
+		const ZState *S = ZStateFromState(L,&idx);
 
 		if(!msg) msg = "(error object is not a string)";
 
-		if(statename) printf("State %s: %s\n",statename, msg);
+		if(S->name) printf("State %s: %s\n",S->name, msg);
 		else printf("State %d: %s\n",idx, msg);
 		lua_pop(L, 1);
 	}
 }
 
-void l_call (lua_State *L, int narg, int numresults) {
+void ZCall (lua_State *L, int narg, int numresults) {
 	int status;
 	int base = lua_gettop(L) - narg;
 
@@ -247,21 +247,22 @@ void l_call (lua_State *L, int narg, int numresults) {
 	}
 }
 
-void l_load (lua_State *L, const char *filename) {
+void ZLoad (lua_State *L, const char *filename) {
 	if(luaL_loadfile(L, filename))
 		report(L);
 	else
-		l_call(L,0,0);
+		ZCall(L,0,0);
 }
 
-void l_parse (lua_State *L, const char *string)
+void ZParse (lua_State *L, const char *string)
 {
-	luaL_loadstring(L, string);
-
-	l_call(L,0,0);
+	if(luaL_loadstring(L, string))
+		report(L);
+	else
+		ZCall(L,0,0);
 }
 
-void l_setpkgpath(lua_State *L, const char *path)
+void ZSetPkgPath(lua_State *L, const char *path)
 {
 	lua_getglobal(L,"package");
 	lua_pushstring(L,path);
@@ -269,16 +270,16 @@ void l_setpkgpath(lua_State *L, const char *path)
 	lua_pop(L,1);
 }
 
-void l_appendpkgpath(lua_State *L, const char *path)
+void ZAppendPkgPath(lua_State *L, const char *path)
 {
 	const char *currentpaths;
 	char *paths;
-	size_t totalsize = strlen(path) + 2;
+	size_t totalsize = 0;
 
 	lua_getglobal(L,"package");
-	currentpaths = l_getcharfield(L, -1,"path");
+	currentpaths = ZGetCharFieldFull(L, -1,"path",&totalsize,0);
 
-	totalsize += strlen(currentpaths);
+	totalsize += strlen(path) + 2;
 	paths = (char *) malloc(totalsize);
 	snprintf(paths,totalsize,"%s;%s",currentpaths,path);
 

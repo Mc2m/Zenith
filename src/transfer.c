@@ -6,6 +6,8 @@
 
 #include "debugging/tdebug.h"
 
+#include "tdefine.h"
+
 static int function_cpy(lua_State *L,const char *p,size_t size,luaL_Buffer *B)
 {
 	luaL_addlstring(B,p,size);
@@ -26,8 +28,8 @@ void copy_table(lua_State *from, lua_State *to, int idx)
 
 	while (lua_next(from,idx)) {
 		/* uses 'key' (at index -2) and 'value' (at index -1) */
-		zenith_transfer_data(from,to,-2);
-		zenith_transfer_data(from,to,-1);
+		ZTransferData(from,to,-2);
+		ZTransferData(from,to,-1);
 
 		lua_settable(to,-3);
 
@@ -45,12 +47,12 @@ void copy_table(lua_State *from, lua_State *to, int idx)
 
 static void (*tbl_cpy)(lua_State *from, lua_State *to, int idx) = copy_table;
 
-void zenith_transfer_set_table_transfer_method(void (*cpy)(lua_State *from, lua_State *to, int idx))
+void ZTransferSetTableTransferMethod(void (*cpy)(lua_State *from, lua_State *to, int idx))
 {
 	tbl_cpy = cpy;
 }
 
-void zenith_transfer_set_default_table_transfer_method()
+void ZTransferSetDefaultTableTransferMethod()
 {
 	tbl_cpy = copy_table;
 }
@@ -87,7 +89,7 @@ void copy_function(lua_State *from, lua_State *to, int idx)
 	}
 }
 
-void zenith_transfer_data(lua_State *from, lua_State *to, int idx)
+void ZTransferData(lua_State *from, lua_State *to, int idx)
 {
 	int type = lua_type(from,idx);
 
@@ -113,17 +115,11 @@ void zenith_transfer_data(lua_State *from, lua_State *to, int idx)
 	}
 }
 
-void zenith_transfer_range(lua_State *from, lua_State *to, int start, int end)
+void ZTransferRange(lua_State *from, lua_State *to, int start, int end)
 {
-	int i = start;
+	int i;
 
-	if(start <= end) {
-		for(; i < end; ++i) {
-			zenith_transfer_data(from,to,i);
-		}
-	} else {
-		for(; i > end; i--) {
-			zenith_transfer_data(from,to,i);
-		}
-	}
+	if(start > end) swapt(start,end,int);
+
+	for(i = start; i < end; ++i) ZTransferData(from,to,i);
 }

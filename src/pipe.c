@@ -1,4 +1,5 @@
 
+
 #include "stdafx.h"
 
 #include "common.h"
@@ -11,25 +12,16 @@
 #include "structure/TArray.h"
 #include "thread/tthread.h"
 
-typedef struct _PipeData {
+typedef struct _ZPipeData {
 	size_t num_data;
 	TCV *v;
 	lua_State *waiting;
 	TArray *localnumdata;
-} PipeData;
+} ZPipeData;
 
-typedef struct ZenithPipes {
-	lua_State *pipes;
-	TMutex *m;
-	TArray *data;
-	size_t next_id;
-} ZenithPipes;
-
-static ZenithPipes *zenithpipes = 0;
-
-static PipeData *pipedata_new(void)
+static ZPipeData *pipedata_new(void)
 {
-	PipeData *p = (PipeData *) malloc(sizeof(PipeData));
+	ZPipeData *p = (ZPipeData *) malloc(sizeof(ZPipeData));
 
 	p->num_data = 0;
 	p->v = 0;
@@ -39,7 +31,7 @@ static PipeData *pipedata_new(void)
 	return p;
 }
 
-static void pipedata_free(PipeData *p)
+static void pipedata_free(ZPipeData *p)
 {
 	if(p) {
 		TCVFree(p->v);
@@ -48,10 +40,19 @@ static void pipedata_free(PipeData *p)
 	}
 }
 
-void zenith_pipe_initialize(void)
+typedef struct ZPipes {
+	lua_State *pipes;
+	TMutex *m;
+	TArray *data;
+	size_t next_id;
+} ZPipes;
+
+static ZPipes *zenithpipes = 0;
+
+void ZPipeInitialize(void)
 {
 	if(!zenithpipes) {
-		zenithpipes = (ZenithPipes *) malloc(sizeof(ZenithPipes));
+		zenithpipes = (ZPipes *) malloc(sizeof(ZPipes));
 		if(!zenithpipes) return;
 	}
 
@@ -62,12 +63,12 @@ void zenith_pipe_initialize(void)
 	luaL_openlibs(zenithpipes->pipes);
 
 	lua_newtable(zenithpipes->pipes); // table containing pipes
-	l_getElement(zenithpipes->pipes,"table","remove",0); // table.remove must stay on top of the stack
+	ZGetElement(zenithpipes->pipes,"table","remove",0); // table.remove must stay on top of the stack
 
 	zenithpipes->data = TArrayNew(0);
 }
 
-void zenith_pipe_destroy(void)
+void ZPipeDestroy(void)
 {
 	if(zenithpipes) {
 		size_t i = 0;
@@ -97,13 +98,13 @@ static inline unsigned char pipe_get_pipe(size_t id) {
 static inline void pipe_send(lua_State *L, size_t id, size_t wait, int idx)
 {
 	size_t i, j = idx+1, numdata = lua_gettop(L);
-	PipeData *d = (PipeData *) TArrayGet(zenithpipes->data,id-1);
+	ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes->data,id-1);
 
 	//printf("sending\n");
 
 	if(d->waiting) {
 		// copy the sent data directly
-		for(; j <= numdata; ++j) zenith_transfer_data(L,d->waiting,j);
+		for(; j <= numdata; ++j) ZTransferData(L,d->waiting,j);
 	} else {
 		int *ptr = (int *) malloc(sizeof(int));
 		*ptr = numdata - 1;
@@ -122,7 +123,7 @@ static inline void pipe_send(lua_State *L, size_t id, size_t wait, int idx)
 
 		for(; j <= numdata; ++j) {
 			lua_pushnumber(zenithpipes->pipes,++i);
-			zenith_transfer_data(L,zenithpipes->pipes,j);
+			ZTransferData(L,zenithpipes->pipes,j);
 			lua_settable(zenithpipes->pipes,-3);
 		}
 
@@ -142,18 +143,18 @@ static inline void pipe_send(lua_State *L, size_t id, size_t wait, int idx)
 	}
 }
 
-void zenith_pipe_custom_send(lua_State *L, int idx, void (*cpy)(lua_State *from, lua_State *to, int idx))
+void ZPipeCustomSend(lua_State *L, int idx, void (*cpy)(lua_State *from, lua_State *to, int idx))
 {
 	if(zenithpipes) {
 		//find pipe id
-		size_t id = l_getintfield(L,idx,"id");
-		PipeData *d = (PipeData *) TArrayGet(zenithpipes->data,id-1);
+		size_t id = ZGetIntField(L,idx,"id");
+		ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes->data,id-1);
 
 		if(lua_gettop(L) > 1) {
 			TMutexLock(zenithpipes->m);
-			zenith_transfer_set_table_transfer_method(cpy);
+			ZTransferSetTableTransferMethod(cpy);
 			pipe_send(L,id,0,idx);
-			zenith_transfer_set_default_table_transfer_method();
+			ZTransferSetDefaultTableTransferMethod();
 			TMutexUnlock(zenithpipes->m);
 		}
 
@@ -174,8 +175,8 @@ int zenith_pipe_send(lua_State *L)
 		// ...
 
 		//find pipe id
-		size_t id = l_getintfield(L,1,"id");
-		PipeData *d = (PipeData *) TArrayGet(zenithpipes->data,id-1);
+		size_t id = ZGetIntField(L,1,"id");
+		ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes->data,id-1);
 
 		if(lua_gettop(L) > 1) {
 			TMutexLock(zenithpipes->m);
@@ -191,7 +192,7 @@ int zenith_pipe_send(lua_State *L)
 
 static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char receive_all)
 {
-	PipeData *d = (PipeData *) TArrayGet(zenithpipes->data,id-1);
+	ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes->data,id-1);
 	size_t numdata = d->num_data;
 
 	if(numdata) {
@@ -225,7 +226,7 @@ static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char receive
 			lua_pushnumber(zenithpipes->pipes,1); // id
 			lua_call(zenithpipes->pipes,2,1);
 
-			zenith_transfer_data(zenithpipes->pipes,L,-1);
+			ZTransferData(zenithpipes->pipes,L,-1);
 			numdata++;
 
 			lua_pop(zenithpipes->pipes,1);
@@ -252,7 +253,7 @@ int zenith_pipe_receive(lua_State *L)
 
 		//find pipe name
 
-		size_t id = l_getintfield(L,1,"id"), numdata;
+		size_t id = ZGetIntField(L,1,"id"), numdata;
 		unsigned char opt = luaL_optint(L,2,1);
 
 		TMutexLock(zenithpipes->m);
@@ -277,8 +278,8 @@ int zenith_pipe_send_wait(lua_State *L)
 
 		if(lua_gettop(L) > 1) {
 			//find pipe id
-			size_t id = l_getintfield(L,1,"id");
-			PipeData *d = (PipeData *) TArrayGet(zenithpipes->data,id-1);
+			size_t id = ZGetIntField(L,1,"id");
+			ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes->data,id-1);
 			size_t timeout = luaL_checkint(L,2);
 			int numdata = lua_gettop(L);
 
@@ -302,8 +303,8 @@ int zenith_pipe_listen(lua_State *L)
 		// 3 - option
 
 		//find pipe id
-		size_t id = l_getintfield(L,1,"id");
-		PipeData *d = (PipeData *) TArrayGet(zenithpipes->data,id-1);
+		size_t id = ZGetIntField(L,1,"id");
+		ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes->data,id-1);
 		size_t numdata;
 		size_t timeout = luaL_checkint(L,2);
 		unsigned char opt = luaL_optint(L,3,1);
@@ -332,10 +333,10 @@ static inline void access_table(lua_State *L)
 {
 	lua_createtable(L,0,3);
 
-	l_setfunctionfield(L,-1,"send",zenith_pipe_send);
-	l_setfunctionfield(L,-1,"wait",zenith_pipe_send_wait);
-	l_setfunctionfield(L,-1,"listen",zenith_pipe_listen);
-	l_setfunctionfield(L,-1,"receive",zenith_pipe_receive);
+	ZSetFunctionField(L,-1,"send",zenith_pipe_send);
+	ZSetFunctionField(L,-1,"wait",zenith_pipe_send_wait);
+	ZSetFunctionField(L,-1,"listen",zenith_pipe_listen);
+	ZSetFunctionField(L,-1,"receive",zenith_pipe_receive);
 
 	lua_pushvalue(L,-1);
 	lua_setfield(L,-2,"__index");
@@ -386,7 +387,7 @@ void set_pipe_table(lua_State *L, const char *name)
 	// -4 Zenith table
 	
 	lua_createtable(L,0,1);
-	l_setintfield(L,-1,"id",zenithpipes->next_id);
+	ZSetIntField(L,-1,"id",zenithpipes->next_id);
 
 	lua_pushvalue(L,-1);
 	lua_setfield(L,-2,"__index");
@@ -401,18 +402,19 @@ void set_pipe_table(lua_State *L, const char *name)
 	lua_pop(L,4);
 }
 
-void zenith_pipe_create(lua_State *L1,lua_State *L2, const char *name)
+void ZPipeCreate(lua_State *L1,lua_State *L2, const char *name)
 {
 	char namerplcmnt[64];
 	if(L1 == L2) return;
 
-	if(!zenithpipes) zenith_pipe_initialize();
+	if(!zenithpipes) ZPipeInitialize();
 
 	if(!name) {
-		size_t i1 = zenith_state_from_state(L1);
-		size_t i2 = zenith_state_from_state(L2);
+		size_t i1,i2;
+		ZStateFromState(L1,&i1);
+		ZStateFromState(L2,&i2);
 
-		snprintf(namerplcmnt,sizeof(namerplcmnt),"pipe%d%d",i1,i2);
+		snprintf(namerplcmnt,sizeof(namerplcmnt),"pipe%d_%d",i1,i2);
 
 		name = namerplcmnt;
 	}

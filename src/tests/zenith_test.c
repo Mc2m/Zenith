@@ -8,7 +8,7 @@
 int test1(void *param) {
 	lua_State *L = (lua_State *) param;
 
-	l_parse(L,"Zenith.Pipe.pipes.test:send('bleh',nil,'test') Zenith.Pipe.pipes.test:send(3)");
+	ZParse(L,"Zenith.Pipe.pipes.test:send('bleh',nil,'test') Zenith.Pipe.pipes.test:send(3)");
 
 	return 0;
 }
@@ -16,7 +16,7 @@ int test1(void *param) {
 int test2(void *param) {
 	lua_State *L = (lua_State *) param;
 
-	l_parse(L,"local p = Zenith.Pipe.pipes.test local val = p:listen(1000,0) print(val) local val = p:listen(1000,0) print(val)");
+	ZParse(L,"local p = Zenith.Pipe.pipes.test local val = p:listen(1000,0) print(val) local val = p:listen(1000,0) print(val)");
 
 	return 0;
 }
@@ -24,27 +24,27 @@ int test2(void *param) {
 int main(int argc, char **argv)
 {
 	TThread *thread1, *thread2;
-	lua_State *L1,*L2;
+	const ZState *S1,*S2;
 
-	zenith_state_initialize(2);
-	zenith_pipe_initialize();
+	ZStateInitialize(2);
+	ZPipeInitialize();
 
-	L1 = zenith_state_open(0,"sender");
-	L2 = zenith_state_open(1,"receiver");
+	S1 = ZStateOpen(0,"sender");
+	S2 = ZStateOpen(1,"receiver");
 
-	luaL_openlibs(L1);
-	luaL_openlibs(L2);
+	luaL_openlibs(S1->L);
+	luaL_openlibs(S2->L);
 
-	zenith_pipe_create(L1,L2,"test");
+	ZPipeCreate(S1->L,S2->L,"test");
 
-	thread1 = TThreadCreate(test1,L1);
+	thread1 = TThreadCreate(test1,S1->L);
 	TThreadJoin(thread1);
 
-	thread2 = TThreadCreate(test2,L2);
+	thread2 = TThreadCreate(test2,S2->L);
 	TThreadJoin(thread2);
 
-	zenith_pipe_destroy();
-	zenith_state_destroy();
+	ZPipeDestroy();
+	ZStateDestroy();
 
 	return 0;
 }

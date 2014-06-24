@@ -2,19 +2,22 @@
 #ifndef _included_zenith_state_h
 #define _included_zenith_state_h
 
-void zenith_state_set_amount(size_t num_states);
+typedef struct ZState {
+	char *name;
+	lua_State *L;
+} ZState;
 
-void zenith_state_initialize(size_t num_states);
-void zenith_state_destroy(void);
+void ZStateSetAmount(size_t num_states);
 
-lua_State *zenith_state_open(size_t idx, const char *name);
-void zenith_state_close(size_t idx);
+void ZStateInitialize(size_t num_states);
+void ZStateDestroy(void);
 
-lua_State *zenith_state_from_idx(size_t idx);
-size_t zenith_state_from_state(lua_State *L);
+const ZState *ZStateOpen(size_t idx, const char *name);
+void ZStateClose(size_t idx);
 
-const char *zenith_state_get_name(size_t idx);
+const ZState *ZStateFromIdx(size_t idx);
+const ZState *ZStateFromState(lua_State *L, size_t *idx);
 
-void register_zenith_state_table(lua_State *L);
+//void register_zenith_state_table(lua_State *L);
 
 #endif
