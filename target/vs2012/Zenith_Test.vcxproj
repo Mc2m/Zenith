@@ -74,10 +74,18 @@
     <ClCompile Include="..\..\src\stdafx.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\..\src\tests\pipe_test.c" />
+    <ClCompile Include="..\..\src\tests\request_manager_test.c" />
+    <ClCompile Include="..\..\src\tests\state_test.c" />
+    <ClCompile Include="..\..\src\tests\transfer_test.c" />
     <ClCompile Include="..\..\src\tests\zenith_test.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\stdafx.h" />
+    <ClInclude Include="..\..\src\tests\pipe_test.h" />
+    <ClInclude Include="..\..\src\tests\request_manager_test.h" />
+    <ClInclude Include="..\..\src\tests\state_test.h" />
+    <ClInclude Include="..\..\src\tests\transfer_test.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\contrib\terra\target\VS2012\Terra.vcxproj">

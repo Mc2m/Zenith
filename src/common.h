@@ -14,6 +14,7 @@ void ZSetTableField(lua_State *L,int index, const char *field, void (*value)(lua
 
 unsigned char ZGetBoolField(lua_State *L,int arg,const char *field);
 int ZGetIntField(lua_State *L,int arg,const char *field);
+int ZGetOptIntField(lua_State *L,int arg,const char *field, int def);
 double ZGetRealField(lua_State *L,int arg,const char *field);
 const char *ZGetCharField(lua_State *L,int arg,const char *field);
 const char *ZGetCharFieldFull(lua_State *L,int arg,const char *field, size_t *size, const char *def);

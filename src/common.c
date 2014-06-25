@@ -134,6 +134,15 @@ int ZGetIntField (lua_State *L,int arg,const char *field) {
 	return val;
 }
 
+int ZGetOptIntField(lua_State *L,int arg,const char *field, int def)
+{
+	int val = 0;
+	lua_getfield(L,arg,field);
+	val = luaL_optint(L,-1,def);
+	lua_pop(L,1);
+	return val;
+}
+
 double ZGetRealField(lua_State *L,int arg,const char *field)
 {
 	double val = 0;
@@ -226,7 +235,7 @@ static void report(lua_State *L)
 
 		if(!msg) msg = "(error object is not a string)";
 
-		if(S->name) printf("State %s: %s\n",S->name, msg);
+		if(S && S->name) printf("State %s: %s\n",S->name, msg);
 		else printf("State %d: %s\n",idx, msg);
 		lua_pop(L, 1);
 	}
@@ -251,7 +260,7 @@ void ZLoad (lua_State *L, const char *filename) {
 	if(luaL_loadfile(L, filename))
 		report(L);
 	else
-		ZCall(L,0,0);
+		ZCall(L,0,LUA_MULTRET);
 }
 
 void ZParse (lua_State *L, const char *string)
@@ -259,7 +268,7 @@ void ZParse (lua_State *L, const char *string)
 	if(luaL_loadstring(L, string))
 		report(L);
 	else
-		ZCall(L,0,0);
+		ZCall(L,0,LUA_MULTRET);
 }
 
 void ZSetPkgPath(lua_State *L, const char *path)

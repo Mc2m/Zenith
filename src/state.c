@@ -86,7 +86,7 @@ const ZState *ZStateFromIdx(size_t idx)
 
 const ZState *ZStateFromState(lua_State *L, size_t *idx)
 {
-	size_t index = ZGetIntField(L, LUA_REGISTRYINDEX, "state_idx");
+	size_t index = ZGetOptIntField(L, LUA_REGISTRYINDEX, "state_idx",num_states);
 	if(idx) *idx = index;
 	return ZStateFromIdx(index);
 }

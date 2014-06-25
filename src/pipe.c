@@ -9,8 +9,8 @@
 
 #include "transfer.h"
 
-#include "structure/TArray.h"
-#include "thread/tthread.h"
+#include <structure/TArray.h>
+#include <thread/tthread.h>
 
 typedef struct _ZPipeData {
 	size_t num_data;
@@ -106,9 +106,8 @@ static inline void pipe_send(lua_State *L, size_t id, size_t wait, int idx)
 		// copy the sent data directly
 		for(; j <= numdata; ++j) ZTransferData(L,d->waiting,j);
 	} else {
-		int *ptr = (int *) malloc(sizeof(int));
-		*ptr = numdata - 1;
-
+		size_t *ptr = (size_t *) malloc(sizeof(size_t));
+		*ptr = numdata - idx;
 		//get current pipe
 		if(pipe_get_pipe(id)) {
 			TMutexUnlock(zenithpipes->m);
@@ -214,7 +213,7 @@ static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char receive
 		if(receive_all) {
 			TArrayEmpty(d->localnumdata,free);
 		} else {
-			int *amount = (int *) TArrayPopIndex(d->localnumdata,0);
+			size_t *amount = (size_t *) TArrayPopIndex(d->localnumdata,0);
 			j = *amount;
 			free(amount);
 		}

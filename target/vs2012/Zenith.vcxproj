@@ -75,6 +75,8 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\common.c" />
     <ClCompile Include="..\..\src\pipe.c" />
+    <ClCompile Include="..\..\src\request.c" />
+    <ClCompile Include="..\..\src\request_execute.c" />
     <ClCompile Include="..\..\src\state.c" />
     <ClCompile Include="..\..\src\stdafx.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -86,6 +88,8 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\common.h" />
     <ClInclude Include="..\..\src\pipe.h" />
+    <ClInclude Include="..\..\src\request.h" />
+    <ClInclude Include="..\..\src\request_execute.h" />
     <ClInclude Include="..\..\src\state.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
     <ClInclude Include="..\..\src\table.h" />

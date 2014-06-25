@@ -3,6 +3,10 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\tests\zenith_test.c" />
     <ClCompile Include="..\..\src\stdafx.c" />
+    <ClCompile Include="..\..\src\tests\pipe_test.c" />
+    <ClCompile Include="..\..\src\tests\request_manager_test.c" />
+    <ClCompile Include="..\..\src\tests\state_test.c" />
+    <ClCompile Include="..\..\src\tests\transfer_test.c" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\contrib\lua51.lib" />
@@ -10,5 +14,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\stdafx.h" />
+    <ClInclude Include="..\..\src\tests\pipe_test.h" />
+    <ClInclude Include="..\..\src\tests\request_manager_test.h" />
+    <ClInclude Include="..\..\src\tests\state_test.h" />
+    <ClInclude Include="..\..\src\tests\transfer_test.h" />
   </ItemGroup>
 </Project>

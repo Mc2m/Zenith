@@ -8,6 +8,8 @@
     <ClCompile Include="..\..\src\table.c" />
     <ClCompile Include="..\..\src\transfer.c" />
     <ClCompile Include="..\..\src\zenith.c" />
+    <ClCompile Include="..\..\src\request.c" />
+    <ClCompile Include="..\..\src\request_execute.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\common.h" />
@@ -17,6 +19,8 @@
     <ClInclude Include="..\..\src\table.h" />
     <ClInclude Include="..\..\src\transfer.h" />
     <ClInclude Include="..\..\src\zenith.h" />
+    <ClInclude Include="..\..\src\request.h" />
+    <ClInclude Include="..\..\src\request_execute.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\contrib\lua51.lib" />
