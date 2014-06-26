@@ -14,6 +14,7 @@
 
 static int *params = 0;
 static size_t offset = 0;
+static size_t limit = 0;
 
 void tbl_transfer(lua_State *from, lua_State *to, int idx)
 {
@@ -34,7 +35,7 @@ void tbl_transfer(lua_State *from, lua_State *to, int idx)
 		lua_pop(from, 1);
 	}
 
-	if(params[offset++] & FETCH_META) {
+	if(params && offset < limit && params[offset++] & FETCH_META) {
 		lua_getmetatable(from,idx);
 		if(!lua_isnil(from,-1) && !lua_equal(from,-1,-2)) {
 			ZTransferData(from,to,-1);
@@ -96,9 +97,9 @@ static void execute(lua_State *L,ZRequest *r)
 		numparam = lua_gettop(L);
 
 		if(numparam - 4) {
-			size_t i = 5, j = 0, size = (numparam - 4)/2;
+			size_t i = 5, j = 0, limit = (numparam - 4)/2;
 			lua_pushvalue(L,1); // copy pipe table
-			params = size ? (int *) malloc(size) : 0;
+			params = limit ? (int *) malloc(limit) : 0;
 		
 			while(i <= numparam) {
 				lua_pushvalue(L,i);
@@ -114,6 +115,7 @@ static void execute(lua_State *L,ZRequest *r)
 
 			offset = 0;
 			free(params);
+			limit = 0;
 		}
 	}
 }
