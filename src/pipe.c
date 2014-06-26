@@ -142,6 +142,26 @@ static inline void pipe_send(lua_State *L, size_t id, size_t wait, int idx)
 	}
 }
 
+void ZPipeSend(lua_State *L, int idx)
+{
+	if(zenithpipes) {
+		//find pipe id
+		size_t id = ZGetIntField(L,idx,"id");
+		ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes->data,id-1);
+
+		if(lua_gettop(L) > 1) {
+			TMutexLock(zenithpipes->m);
+			pipe_send(L,id,0,idx);
+			TMutexUnlock(zenithpipes->m);
+		}
+
+		if(d->v) TCVWake(d->v);
+
+		//consume the elements
+		lua_pop(L,lua_gettop(L) - idx + 1);
+	}
+}
+
 void ZPipeCustomSend(lua_State *L, int idx, void (*cpy)(lua_State *from, lua_State *to, int idx))
 {
 	if(zenithpipes) {

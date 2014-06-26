@@ -10,42 +10,6 @@
 
 #include "transfer.h"
 
-#define FETCH_META 1
-
-static int *params = 0;
-static size_t offset = 0;
-static size_t limit = 0;
-
-void tbl_transfer(lua_State *from, lua_State *to, int idx)
-{
-	if(idx < 0) idx--;
-
-	lua_newtable(to);
-
-	lua_pushnil(from);
-
-	while (lua_next(from,idx)) {
-		if(!lua_istable(from,-2) && !lua_istable(from,-1)) {
-			ZTransferData(from,to,-2);
-			ZTransferData(from,to,-1);
-
-			lua_settable(to,-3);
-		}
-
-		lua_pop(from, 1);
-	}
-
-	if(params && offset < limit && params[offset++] & FETCH_META) {
-		lua_getmetatable(from,idx);
-		if(!lua_isnil(from,-1) && !lua_equal(from,-1,-2)) {
-			ZTransferData(from,to,-1);
-
-			lua_setmetatable(to,-2);
-		}
-		lua_pop(from,1);
-	}
-}
-
 static inline void error(lua_State *L,const char *errormsg,...)
 {
 	lua_pushvalue(L,3); // copy send function
@@ -98,24 +62,13 @@ static void execute(lua_State *L,ZRequest *r)
 
 		if(numparam - 4) {
 			size_t i = 5, j = 0, limit = (numparam - 4)/2;
+			int type = lua_tointeger(L,4);
 			lua_pushvalue(L,1); // copy pipe table
-			params = limit ? (int *) malloc(limit) : 0;
+			lua_replace(L,4); // put it in place of the type
 		
-			while(i <= numparam) {
-				lua_pushvalue(L,i);
+			ZPipeSend(L,numparam - 1);
 
-				if(lua_istable(L,i) && lua_isnumber(L,i+1)) {
-					params[j++] = lua_tointeger(L,++i);
-				}
-
-				i++;
-			}
-		
-			ZPipeCustomSend(L,numparam + 1, tbl_transfer);
-
-			offset = 0;
-			free(params);
-			limit = 0;
+			lua_pushinteger(L,type); // put back the type
 		}
 	}
 }
