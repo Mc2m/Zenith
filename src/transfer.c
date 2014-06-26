@@ -36,8 +36,7 @@ void copy_table(lua_State *from, lua_State *to, int idx)
 		lua_pop(from, 1);
 	}
 
-	lua_getmetatable(from,idx);
-	if(! lua_isnil(from,-1)) {
+	if(lua_getmetatable(from,idx)) {
 		copy_table(from,to,-1);
 
 		lua_setmetatable(to,-2);
