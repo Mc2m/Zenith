@@ -36,12 +36,14 @@ void copy_table(lua_State *from, lua_State *to, int idx)
 		lua_pop(from, 1);
 	}
 
+	if(idx < 0) idx++;
+
 	if(lua_getmetatable(from,idx)) {
 		copy_table(from,to,-1);
 
 		lua_setmetatable(to,-2);
+		lua_pop(from,1);
 	}
-	lua_pop(from,1);
 }
 
 static void (*tbl_cpy)(lua_State *from, lua_State *to, int idx) = copy_table;
