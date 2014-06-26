@@ -66,7 +66,7 @@ static void execute(lua_State *L,ZRequest *r)
 			lua_pushvalue(L,1); // copy pipe table
 			lua_replace(L,4); // put it in place of the type
 		
-			ZPipeSend(L,numparam - 1);
+			ZPipeSend(L,4);
 
 			lua_pushinteger(L,type); // put back the type
 		}
