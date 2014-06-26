@@ -158,14 +158,16 @@ void ZRequestManagerDestroy(void)
 ZRManager *ZRequestManagerNew(lua_State *L)
 {
 	ZRManager *m = (ZRManager *) malloc(sizeof(ZRManager));
+	size_t tblidx;
 	
 	TArrayInit(&m->handlers,0);
 
 	//parse pipes
 	ZGetElement(L,"Zenith","Pipe","pipes",0);
+	tblidx = lua_gettop(L);
 	lua_pushnil(L);
 
-	while(lua_next(L,1)) {
+	while(lua_next(L,tblidx)) {
 		TArrayAppend(&m->handlers,ZRequestHandlerNew(L,-2));
 
 		lua_remove(L,-2); // remove the pipe
