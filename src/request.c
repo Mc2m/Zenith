@@ -175,6 +175,8 @@ ZRManager *ZRequestManagerNew(lua_State *L)
 		lua_remove(L,-3); // remove the pipe name from previous location
 	}
 
+	lua_remove(L,tblidx);
+
 	return m;
 }
 
