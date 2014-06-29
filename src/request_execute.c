@@ -61,7 +61,6 @@ static void execute(lua_State *L,ZRequest *r)
 		numparam = lua_gettop(L);
 
 		if(numparam - 4) {
-			size_t i = 5, j = 0, limit = (numparam - 4)/2;
 			int type = lua_tointeger(L,4);
 			lua_pushvalue(L,1); // copy pipe table
 			lua_replace(L,4); // put it in place of the type

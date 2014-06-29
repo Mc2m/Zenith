@@ -87,7 +87,7 @@ static inline void error(ZRequestHandler *r,const char *errormsg,...)
 {
 	va_list l;
 
-	va_start(errormsg,l);
+	va_start(l,errormsg);
 
 	lua_pushvalue(r->L,3); // copy send function
 	lua_pushvalue(r->L,1); // copy pipe table

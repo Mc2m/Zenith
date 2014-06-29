@@ -4,7 +4,7 @@
 #include "common.h"
 #include "shared_table.h"
 
-void *(*m_new)(void)     = 0;
+/*void *(*m_new)(void)     = 0;
 void (*m_free)(void *)   = 0;
 void (*m_lock)(void *)   = 0;
 void (*m_unlock)(void *) = 0;
@@ -92,7 +92,7 @@ int shared_mut_gc(lua_State *L)
 
 //----------------------------------------------//
 
-/*int shared_table_set(lua_State *L)
+int shared_table_set(lua_State *L)
 {
 	if(lua_istable(L,-1)) {
 		Lua_Shared_Information *lsi = (Lua_Shared_Information *) lua_newuserdata(L,sizeof(Lua_Shared_Information));
@@ -103,7 +103,7 @@ int shared_mut_gc(lua_State *L)
 	}
 
 	return 0;
-}*/
+}
 
 int shared_table_set_mutex(lua_State *L)
 {
@@ -202,16 +202,16 @@ void register_zenith_shared_table(lua_State *L)
 {
 	luaL_openlib(L, 0, shared_table_funcs, 0);
 
-	luaL_newmetatable(L,SHARED_INF_META); /*image metatable */
+	luaL_newmetatable(L,SHARED_INF_META); // image metatable
 
 	lua_pushvalue(L, -1);
-	lua_setfield(L,-2,"__index"); /* metatable.__index = metatable */
+	lua_setfield(L,-2,"__index"); // metatable.__index = metatable
 
 	luaL_openlib(L, 0, shared_inf_meta_funcs, 0);
 
-	luaL_newmetatable(L,SHARED_MUT_META); /*image metatable */
+	luaL_newmetatable(L,SHARED_MUT_META); // image metatable
 	lua_pushvalue(L, -1);
-	lua_setfield(L,-2,"__index"); /* metatable.__index = metatable */
+	lua_setfield(L,-2,"__index"); // metatable.__index = metatable
 
 	luaL_openlib(L, 0, shared_mut_meta_funcs, 0);
-}
+}*/

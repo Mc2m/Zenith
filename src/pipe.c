@@ -9,7 +9,7 @@
 
 #include "transfer.h"
 
-#include <structure/TArray.h>
+#include <structure/tarray.h>
 #include <thread/tthread.h>
 
 typedef struct _ZPipeData {
@@ -71,8 +71,6 @@ void ZPipeInitialize(void)
 void ZPipeDestroy(void)
 {
 	if(zenithpipes) {
-		size_t i = 0;
-
 		lua_close(zenithpipes->pipes);
 		TMutexFree(zenithpipes->m);
 		zenithpipes->pipes = 0;
@@ -215,7 +213,7 @@ static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char receive
 	size_t numdata = d->num_data;
 
 	if(numdata) {
-		size_t j = numdata, i = 1;
+		size_t j = numdata;
 
 		//printf("receiving\n");
 
@@ -298,7 +296,6 @@ int zenith_pipe_send_wait(lua_State *L)
 		if(lua_gettop(L) > 1) {
 			//find pipe id
 			size_t id = ZGetIntField(L,1,"id");
-			ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes->data,id-1);
 			size_t timeout = luaL_checkint(L,2);
 			int numdata = lua_gettop(L);
 
