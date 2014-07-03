@@ -1,8 +1,4 @@
 
-#ifdef __OBJC__
-#import <Cocoa/Cocoa.h>
-#endif
-
 #ifndef __included_stdafx_h
 #define __included_stdafx_h
 

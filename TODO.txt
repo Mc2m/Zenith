@@ -1,0 +1,16 @@
+
+for v 1.0.0:
+
+--PRIORITY
+	- Implement shared tables
+	- Improve documentation
+	- Implement better access from lua
+
+--REQUIRED
+
+	- Implement build of luajit on build time
+	- Remove non Zenith specific element
+	- Implement tests
+
+--OPTIONAL
+
