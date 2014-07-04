@@ -2,5 +2,7 @@
 	path = contrib/luajit
 	url = http://luajit.org/git/luajit-2.0.git
 [submodule "contrib/terra"]
+
 	path = contrib/terra
-	url = ssh://mc2m@git.uplinklabs.net/pub/scm/git/mc2m/terra.git
+
+	url = ssh://git.uplinklabs.net/pub/scm/git/mc2m/terra.git
