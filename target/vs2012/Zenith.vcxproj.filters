@@ -22,8 +22,4 @@
     <ClInclude Include="..\..\src\request.h" />
     <ClInclude Include="..\..\src\request_execute.h" />
   </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\..\contrib\lua51.lib" />
-    <Library Include="..\..\contrib\lua51d.lib" />
-  </ItemGroup>
 </Project>
