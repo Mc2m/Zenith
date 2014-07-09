@@ -2,6 +2,9 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Zenith", "Zenith.vcxproj", "{3357E1F1-7C8B-4137-9B74-D3AF1C834839}"
+	ProjectSection(ProjectDependencies) = postProject
+		{58A31A79-8ED4-460B-9E9D-AB840B8E91D5} = {58A31A79-8ED4-460B-9E9D-AB840B8E91D5}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Zenith_Test", "Zenith_Test.vcxproj", "{EEC3F6AB-57DC-444B-8734-BD24E76C06B4}"
 EndProject
