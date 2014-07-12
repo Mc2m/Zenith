@@ -22,4 +22,8 @@
     <ClInclude Include="..\..\src\request.h" />
     <ClInclude Include="..\..\src\request_execute.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Library Include="$(SolutionDir)lib\$(Platform)\$(Configuration)\lua51.lib" />
+    <Library Include="$(SolutionDir)lib\$(Platform)\$(Configuration)\terra.lib" />
+  </ItemGroup>
 </Project>

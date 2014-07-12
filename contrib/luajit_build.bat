@@ -19,7 +19,7 @@
 call msvcbuild.bat %2 static
 @if errorlevel 0 (
 	@mv %OUTNAME% %LIBPATH%%OUTNAME%
-	@mv vc110.pdb %LIBPATH%vc110.pdb
+	@mv vc*.pdb %LIBPATH%
 	@del luajit.exe *.pdb luajit.ilk
 )
 @endlocal

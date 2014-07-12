@@ -9,8 +9,7 @@
     <ClCompile Include="..\..\src\tests\transfer_test.c" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\..\contrib\lua51.lib" />
-    <Library Include="..\..\contrib\lua51d.lib" />
+    <Library Include="$(SolutionDir)lib\$(Platform)\$(Configuration)\lua51.lib" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\stdafx.h" />

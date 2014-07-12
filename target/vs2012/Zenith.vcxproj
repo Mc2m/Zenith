@@ -62,7 +62,7 @@
       <Message>build contribs</Message>
     </PreBuildEvent>
     <CustomBuildStep>
-      <Command>DEL $(OutDir)*.lib</Command>
+      <Command>DEL $(OutDir)*.lib $(OutDir)*.pdb</Command>
       <Message>Cleaning</Message>
       <Outputs>.</Outputs>
     </CustomBuildStep>
