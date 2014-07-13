@@ -64,7 +64,7 @@
     <CustomBuildStep>
       <Command>DEL $(OutDir)*.lib $(OutDir)*.pdb</Command>
       <Message>Cleaning</Message>
-      <Outputs>.</Outputs>
+      <Outputs>$(OutDir)nonexistent.lib</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
