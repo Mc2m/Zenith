@@ -11,6 +11,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Zenith", "Zenith.vcxproj", 
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Zenith_Test", "Zenith_Test.vcxproj", "{EEC3F6AB-57DC-444B-8734-BD24E76C06B4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3357E1F1-7C8B-4137-9B74-D3AF1C834839} = {3357E1F1-7C8B-4137-9B74-D3AF1C834839}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,6 +21,10 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{58A31A79-8ED4-460B-9E9D-AB840B8E91D5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{58A31A79-8ED4-460B-9E9D-AB840B8E91D5}.Debug|Win32.Build.0 = Debug|Win32
+		{58A31A79-8ED4-460B-9E9D-AB840B8E91D5}.Release|Win32.ActiveCfg = Release|Win32
+		{58A31A79-8ED4-460B-9E9D-AB840B8E91D5}.Release|Win32.Build.0 = Release|Win32
 		{3357E1F1-7C8B-4137-9B74-D3AF1C834839}.Debug|Win32.ActiveCfg = Debug|Win32
 		{3357E1F1-7C8B-4137-9B74-D3AF1C834839}.Debug|Win32.Build.0 = Debug|Win32
 		{3357E1F1-7C8B-4137-9B74-D3AF1C834839}.Release|Win32.ActiveCfg = Release|Win32
@@ -26,10 +33,6 @@ Global
 		{EEC3F6AB-57DC-444B-8734-BD24E76C06B4}.Debug|Win32.Build.0 = Debug|Win32
 		{EEC3F6AB-57DC-444B-8734-BD24E76C06B4}.Release|Win32.ActiveCfg = Release|Win32
 		{EEC3F6AB-57DC-444B-8734-BD24E76C06B4}.Release|Win32.Build.0 = Release|Win32
-		{58A31A79-8ED4-460B-9E9D-AB840B8E91D5}.Debug|Win32.ActiveCfg = Debug|Win32
-		{58A31A79-8ED4-460B-9E9D-AB840B8E91D5}.Debug|Win32.Build.0 = Debug|Win32
-		{58A31A79-8ED4-460B-9E9D-AB840B8E91D5}.Release|Win32.ActiveCfg = Release|Win32
-		{58A31A79-8ED4-460B-9E9D-AB840B8E91D5}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

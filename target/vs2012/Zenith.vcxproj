@@ -48,9 +48,6 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
-    <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
     <PreBuildEvent>
       <Command>call "$(ProjectDir)..\..\contrib\build.bat" $(SolutionDir) $(Configuration) $(Platform)</Command>
       <Message>build contribs</Message>
@@ -104,10 +101,6 @@
     <ClInclude Include="..\..\src\table.h" />
     <ClInclude Include="..\..\src\transfer.h" />
     <ClInclude Include="..\..\src\zenith.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="$(OutDir)lua51.lib" />
-    <Library Include="$(OutDir)terra.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
