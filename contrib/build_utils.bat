@@ -36,7 +36,6 @@ IF not exist libs.bat (
 )
 
 call libs.bat %2
-
 IF not defined FOLDER (
 	echo Missing Library %2
 	exit /b 1
@@ -44,15 +43,14 @@ IF not defined FOLDER (
 
 :BUILDLIBLOOP
 rem make sure the directory isn't empty
-for /F %%i in ('dir /a-d "%FOLDER%\*"') do (
-	rem not empty
+for /F %%i in ('dir /a /b "%FOLDER%\*" 2^>NUL') do (
 	call %CONTRIBPATH%%BUILDBAT%
 	IF errorlevel 1 exit /b 1
 	goto :END
 )
 
 rem empty
-set OLDDIR = "%CD%"
+set OLDDIR="%CD%"
 cd ../..
 IF %OLDDIR%=="%CD%" (
 	set "OLDDIR="
