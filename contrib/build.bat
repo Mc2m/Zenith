@@ -38,14 +38,13 @@ goto :END
 
 :CLEAN
 
-IF not defined %1 goto :BAD
-IF not defined %2 goto :BAD
-IF not defined %3 goto :BAD
+IF "%2"=="" goto :BAD
+IF "%3"=="" goto :BAD
+IF "%4"=="" goto :BAD
 
 rem set the different parameters
-call build_utils.bat INFO %2 %3 %4
-
 cd %CONTRIBPATH%
+call build_utils.bat INFO %2 %3 %4
 
 echo Cleaning...
 for %%i in %CONTRIBLIST% do (
