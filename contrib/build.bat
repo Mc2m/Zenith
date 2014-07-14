@@ -1,10 +1,13 @@
-@echo off
-
 rem Script to build contribs with MSVC.
 rem
+
+@echo off
+
 setlocal
 
 set CONTRIBLIST=(luajit)
+set CURDIR="%CD%"
+set CONTRIBPATH=%~dp0
 
 IF "%1"=="clean" goto :CLEAN
 
@@ -16,45 +19,48 @@ IF "%2"=="" goto :BAD
 IF "%3"=="" goto :BAD
 
 rem set the different parameters
-set SOLUTIONDIR=%1
-set CONFIGURATION=%2
-set PLATFORM=%3
-
-rem detect debug build
-set DEBUG=0
-if not x%CONFIGURATION:Debug=%==x%CONFIGURATION% (
-	set DEBUG=1
-	set CONFIGURATION=Debug
-) else (
-	if not x%CONFIGURATION:debug=%==x%CONFIGURATION% (
-		set DEBUG=1
-		set CONFIGURATION=Debug
-	)
-)
-
-rem fetch the toolset version from input.
-set TOOLSETVER=%VisualStudioVersion:.=%
-
-rem set output path
-set OUTPATH=%SOLUTIONDIR%lib\%PLATFORM%\%CONFIGURATION%\
+cd %CONTRIBPATH%
+call build_utils.bat INFO %1 %2 %3
 
 rem create the folder to be on the safe side
 IF not exist %OUTPATH% mkdir "%OUTPATH%"
 
-rem fetch the contrib directory
-set CBPATH=%~dp0
-cd %CBPATH%s
-
 rem build contribs
 for %%i in %CONTRIBLIST% do (
-	call %%i_build.bat
+	cd %CONTRIBPATH%
+	call build_utils.bat LIB %%i
 	IF errorlevel 1 goto :FAIL
 )
 
+cd %CURDIR%
 endlocal
 goto :END
 
+:CLEAN
+
+IF not defined %1 goto :BAD
+IF not defined %2 goto :BAD
+IF not defined %3 goto :BAD
+
+rem set the different parameters
+call build_utils.bat INFO %2 %3 %4
+
+cd %CONTRIBPATH%
+
+echo Cleaning...
+for %%i in %CONTRIBLIST% do (
+	call %%i_build.bat clean
+)
+echo Done.
+
+cd %CURDIR%
+
+endlocal
+exit /b 0
+
 :FAIL
+
+cd %CURDIR%
 echo.
 echo *******************************************************
 echo *** Build FAILED -- Please check the error messages ***
@@ -63,35 +69,8 @@ echo *******************************************************
 endlocal
 exit /b 1
 
-:CLEAN
-
-IF "%2"=="" goto :BAD
-IF "%3"=="" goto :BAD
-IF "%4"=="" goto :BAD
-
-rem set the different parameters
-set SOLUTIONDIR=%2
-set CONFIGURATION=%3
-set PLATFORM=%4
-
-rem set output path
-set OUTPATH=%SOLUTIONDIR%lib\%PLATFORM%\%CONFIGURATION%\
-
-rem fetch the contrib directory
-set CBPATH=%~dp0
-cd %CBPATH%
-
-echo Cleaning...
-for %%i in %CONTRIBLIST% do (
-	call %%i_build.bat clean
-)
-echo Done.
-
-endlocal
-exit /b 0
-
 :BAD
-echo Missing library path
+echo Missing argument
 endlocal
 exit /b 1
 
