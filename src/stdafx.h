@@ -9,6 +9,6 @@
 
 #include <tdefine.h>
 
-#include <common.h>
+#include <lux.h>
 
 #endif // __included_stdafx_h
