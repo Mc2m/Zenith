@@ -1,10 +1,24 @@
 
 #include "stdafx.h"
 
-#include "common.h"
 #include "state.h"
 
 #include <string.h>
+
+static void ZStateReport(lua_State *L)
+{
+	if (!lua_isnil(L, -1)) {
+		const char *msg = lua_tostring(L, -1);
+		size_t idx;
+		const ZState *S = ZStateFromState(L,&idx);
+
+		if(!msg) msg = "(error object is not a string)";
+
+		if(S && S->name) printf("State %s: %s\n",S->name, msg);
+		else printf("State %d: %s\n",idx, msg);
+		lua_pop(L, 1);
+	}
+}
 
 static size_t num_states = 0;
 static ZState *states = 0;
@@ -29,6 +43,7 @@ void ZStateSetAmount(size_t _num_states)
 void ZStateInitialize(size_t num_states)
 {
 	ZStateSetAmount(num_states);
+	LSetReportFunc(ZStateReport);
 }
 
 void ZStateDestroy(void)
@@ -56,7 +71,7 @@ const ZState *ZStateOpen(size_t idx, const char *name)
 	S = &states[idx];
 	if(!S->L) {
 		S->L = luaL_newstate();
-		ZSetIntField(S->L, LUA_REGISTRYINDEX, "state_idx", idx);
+		LSetIntField(S->L, LUA_REGISTRYINDEX, "state_idx", idx);
 	}
 
 	if(name) {
@@ -86,7 +101,7 @@ const ZState *ZStateFromIdx(size_t idx)
 
 const ZState *ZStateFromState(lua_State *L, size_t *idx)
 {
-	size_t index = ZGetOptIntField(L, LUA_REGISTRYINDEX, "state_idx",num_states);
+	size_t index = LGetOptIntField(L, LUA_REGISTRYINDEX, "state_idx",num_states);
 	if(idx) *idx = index;
 	return ZStateFromIdx(index);
 }

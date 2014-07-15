@@ -1,7 +1,6 @@
 
 #include "stdafx.h"
 
-#include "common.h"
 #include "state.h"
 #include "request.h"
 
@@ -163,7 +162,7 @@ ZRManager *ZRequestManagerNew(lua_State *L)
 	TArrayInit(&m->handlers,0);
 
 	//parse pipes
-	ZGetElement(L,"Zenith","Pipe","pipes",0);
+	LGetElement(L,"Zenith","Pipe","pipes",0);
 	tblidx = lua_gettop(L);
 	lua_pushnil(L);
 

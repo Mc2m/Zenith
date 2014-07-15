@@ -34,16 +34,16 @@ void ZTestRequestManager(void) {
 	m = ZRequestManagerNew(L2);
 
 	// set up a test value
-	ZParse(L2,"testvar = 'bleh'");
+	LParse(L2,"testvar = 'bleh'");
 
 	//test request
 	snprintf(request,sizeof(request),"local p = Zenith.Pipe.pipes.test p:send(%d,'return testvar')",rexecidx);
-	ZParse(L1,request);
+	LParse(L1,request);
 
 	ZRequestManagerRun(m);
 
 	snprintf(request,sizeof(request),"local p = Zenith.Pipe.pipes.test return p:receive()");
-	ZParse(L1,request);
+	LParse(L1,request);
 
 	if(!lua_isstring(L1,-1)) {
 		TLogReport(T_LOG_WARNING,"ZTestRequestManager","The request didn't return the proper value");

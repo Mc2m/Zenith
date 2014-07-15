@@ -44,9 +44,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../src;../../contrib/luajit/src;../../contrib/terra/src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src;../../contrib/luajit/src;../../contrib/terra/src;../../contrib/lux</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <TreatWarningAsError>true</TreatWarningAsError>
+	  <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <PreBuildEvent>
       <Command>call "$(ProjectDir)..\..\contrib\build.bat" $(SolutionDir) $(Configuration) $(Platform)</Command>
@@ -62,7 +63,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_DEBUG</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -75,7 +76,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\common.c" />
     <ClCompile Include="..\..\src\pipe.c" />
     <ClCompile Include="..\..\src\request.c" />
     <ClCompile Include="..\..\src\request_execute.c" />
@@ -83,18 +83,15 @@
     <ClCompile Include="..\..\src\stdafx.c">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\src\table.c" />
     <ClCompile Include="..\..\src\transfer.c" />
     <ClCompile Include="..\..\src\zenith.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\common.h" />
     <ClInclude Include="..\..\src\pipe.h" />
     <ClInclude Include="..\..\src\request.h" />
     <ClInclude Include="..\..\src\request_execute.h" />
     <ClInclude Include="..\..\src\state.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
-    <ClInclude Include="..\..\src\table.h" />
     <ClInclude Include="..\..\src\transfer.h" />
     <ClInclude Include="..\..\src\zenith.h" />
   </ItemGroup>

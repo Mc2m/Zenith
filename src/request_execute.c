@@ -1,7 +1,6 @@
 
 #include "stdafx.h"
 
-#include "common.h"
 #include "request.h"
 #include "request_execute.h"
 #include "pipe.h"

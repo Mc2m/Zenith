@@ -1,11 +1,10 @@
 rem Script to build contribs with MSVC.
 rem
-
 @echo off
 
 setlocal
 
-set CONTRIBLIST=(luajit)
+set CONTRIBLIST=(luajit lux)
 set CURDIR="%CD%"
 set CONTRIBPATH=%~dp0
 
@@ -13,7 +12,7 @@ IF "%1"=="clean" goto :CLEAN
 
 if not defined INCLUDE goto :WRONG
 
-rem %1 is output path, %2 is debug or release, %3 is architecture
+rem %1 is solution dir, %2 is debug or release, %3 is architecture
 IF "%1"=="" goto :BAD
 IF "%2"=="" goto :BAD
 IF "%3"=="" goto :BAD
@@ -22,8 +21,15 @@ rem set the different parameters
 cd %CONTRIBPATH%
 call build_utils.bat INFO %1 %2 %3
 
+IF not exist libs.bat (
+	echo Missing libs.bat
+	goto :FAIL
+)
+
 rem create the folder to be on the safe side
 IF not exist %OUTPATH% mkdir "%OUTPATH%"
+
+cd %CBPATH%
 
 rem build contribs
 for %%i in %CONTRIBLIST% do (
@@ -46,14 +52,15 @@ rem set the different parameters
 cd %CONTRIBPATH%
 call build_utils.bat INFO %2 %3 %4
 
-echo Cleaning...
-for %%i in %CONTRIBLIST% do (
-	call %%i_build.bat clean
+IF not exist libs.bat (
+	echo Warning: Missing libs.bat. Cleaning Aborted.
+) else (
+	echo Cleaning...
+	for %%i in %CONTRIBLIST% do (call build_utils.bat CLEAN %%i)
+	echo Done.
 )
-echo Done.
 
 cd %CURDIR%
-
 endlocal
 exit /b 0
 

@@ -1,7 +1,8 @@
 rem utilities for build
 
-IF "%1"=="INFO" goto :SETBUILDINF
-IF "%1"=="LIB"  goto :BUILDLIB
+IF "%1"=="INFO"  goto :SETBUILDINF
+IF "%1"=="LIB"   goto :BUILDLIB
+IF "%1"=="CLEAN" goto :CLEANLIB
 
 :SETBUILDINF
 rem set the different parameters
@@ -30,13 +31,8 @@ set OUTPATH=%SOLUTIONDIR%lib\%PLATFORM%\%CONFIGURATION%\
 goto :END
 	
 :BUILDLIB
-IF not exist libs.bat (
-	echo Missing libs.bat
-	exit /b 1
-)
-
 call libs.bat %2
-IF not defined FOLDER (
+IF not defined PROJNAME (
 	echo Missing Library %2
 	exit /b 1
 )
@@ -59,5 +55,14 @@ IF %OLDDIR%=="%CD%" (
 )
 set "OLDDIR="
 goto :BUILDLIBLOOP
+
+:CLEANLIB
+call libs.bat %2 clean
+IF not defined PROJNAME (
+	echo Warning: Missing Library %2
+	exit /b 0
+)
+
+call %BUILDBAT% clean
 
 :END

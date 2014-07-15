@@ -1,24 +1,22 @@
-rem Script to build luajit with MSVC.
+rem Script to build luajit
 rem
 
 setlocal
-
-set PROJNAME=lua51
 set OUTPUT=%OUTPATH%%PROJNAME%.lib
 
 IF "%1"=="clean" goto :CLEAN
 
 IF exist %OUTPUT% (
-	echo Nothing to do for LuaJIT
+	echo Nothing to do for %LABELNAME%
 	goto :END
 )
 
-echo === Building LuaJIT ===
+echo === Building %LABELNAME% ===
 echo.
 
 IF %DEBUG%==1 set CONFIG=debug
 
-cd luajit/src
+cd %FOLDER%/src
 call msvcbuild.bat %CONFIG% static
 if errorlevel 0 (
 	mv %PROJNAME%.lib %OUTPUT%
@@ -32,7 +30,7 @@ endlocal
 goto :END
 
 :CLEAN
-del /F /Q %OUTPUT% %OUTPATH%*.pdb
+2>NUL del /F /Q %OUTPUT% %OUTPATH%*.pdb
 endlocal
 goto :END
 

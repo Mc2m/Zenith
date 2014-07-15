@@ -1,4 +1,3 @@
-
 #include "stdafx.h"
 
 #include "common.h"
@@ -40,7 +39,7 @@ static int table_binary_insert(lua_State *L)
 		if (customcomp) {
 
 			lua_call(L,2,1);
-			larger = luaL_checkint(L,-1);
+			larger = (char) luaL_checkint(L,-1);
 
 			lua_pop(L,1);
 
@@ -63,7 +62,7 @@ static int table_binary_insert(lua_State *L)
 		lua_gettable(L,1);
 	}
 
-	ZGetElement(L,"table","insert",0);
+	LGetElement(L,"table","insert",0);
 	lua_pushvalue(L,1);
 	lua_pushnumber(L,maxi+1);
 	lua_pushvalue(L,2);
@@ -76,6 +75,7 @@ static int table_binary_insert(lua_State *L)
 
 static int table_help(lua_State *L)
 {
+	UNREFERENCED_PARAMETER(L);
 	printf("Table:\n");
 	printf("Contains functions specific to table manipulation.\n\n");
 	printf("Content:\n");
@@ -86,8 +86,8 @@ static int table_help(lua_State *L)
 	return 0;
 }
 
-void ZRegisterTable(lua_State *L)
+void LRegisterTable(lua_State *L)
 {
-	ZSetFunctionField(L, -1, "bin_insert", table_binary_insert);
-	ZSetFunctionField(L, -1, "help"      , table_help);
+	LSetFunctionField(L, -1, "bin_insert", table_binary_insert);
+	LSetFunctionField(L, -1, "help"      , table_help);
 }

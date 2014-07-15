@@ -1,7 +1,6 @@
 
 #include "stdafx.h"
 
-#include "common.h"
 #include "transfer.h"
 
 #include "debugging/tdebug.h"
@@ -120,7 +119,7 @@ void ZTransferRange(lua_State *from, lua_State *to, int start, int end)
 {
 	int i;
 
-	if(start > end) swapt(start,end,int);
+	if(start > end) TSWAPT(start,end,int);
 
 	for(i = start; i < end; ++i) ZTransferData(from,to,i);
 }
