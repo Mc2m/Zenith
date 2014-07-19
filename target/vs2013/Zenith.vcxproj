@@ -38,7 +38,6 @@
   <PropertyGroup>
     <OutDir>$(SolutionDir)lib\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Configuration)\$(ProjectName)\</IntDir>
-    <CustomBuildAfterTargets>Clean</CustomBuildAfterTargets>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -49,15 +48,6 @@
       <TreatWarningAsError>true</TreatWarningAsError>
 	  <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
-    <PreBuildEvent>
-      <Command>call "$(ProjectDir)..\..\contrib\build.bat" $(SolutionDir) $(Configuration) $(Platform)</Command>
-      <Message>build contribs</Message>
-    </PreBuildEvent>
-    <CustomBuildStep>
-      <Command>call "$(ProjectDir)..\..\contrib\build.bat" clean $(SolutionDir) $(Configuration) $(Platform)</Command>
-      <Message>Cleaning</Message>
-      <Outputs>$(OutDir)nonexistent.lib</Outputs>
-    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
