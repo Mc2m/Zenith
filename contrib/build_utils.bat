@@ -37,24 +37,9 @@ IF not defined PROJNAME (
 	exit /b 1
 )
 
-:BUILDLIBLOOP
-rem make sure the directory isn't empty
-for /F %%i in ('dir /a /b "%FOLDER%\*" 2^>NUL') do (
-	call %CONTRIBPATH%%BUILDBAT%
-	IF errorlevel 1 exit /b 1
-	goto :END
-)
-
-rem empty
-set OLDDIR="%CD%"
-cd ../..
-IF %OLDDIR%=="%CD%" (
-	set "OLDDIR="
-	echo Can't find the folder %FOLDER% for library %2
-	exit /b 1
-)
-set "OLDDIR="
-goto :BUILDLIBLOOP
+call %CONTRIBPATH%%BUILDBAT%
+IF errorlevel 1 exit /b 1
+goto :END
 
 :CLEANLIB
 call libs.bat %2 clean
