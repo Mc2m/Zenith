@@ -12,11 +12,11 @@ set PLATFORM=%4
 
 rem detect debug build
 set DEBUG=0
-if not x%CONFIGURATION:Debug=%==x%CONFIGURATION% (
+if not "%CONFIGURATION:Debug=%"=="%CONFIGURATION%" (
 	set DEBUG=1
 	set CONFIGURATION=Debug
 ) else (
-	if not x%CONFIGURATION:debug=%==x%CONFIGURATION% (
+	if not "%CONFIGURATION:debug=%"=="%CONFIGURATION%" (
 		set DEBUG=1
 		set CONFIGURATION=Debug
 	)
