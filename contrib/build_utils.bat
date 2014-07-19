@@ -22,6 +22,14 @@ if not "%CONFIGURATION:Debug=%"=="%CONFIGURATION%" (
 	)
 )
 
+if not "%CONFIGURATION:Release=%"=="%CONFIGURATION%" (
+	set CONFIGURATION=Release
+) else (
+	if not "%CONFIGURATION:release=%"=="%CONFIGURATION%" (
+		set CONFIGURATION=Release
+	)
+)
+
 rem fetch the toolset version from input.
 set TOOLSETVER=%VisualStudioVersion:.=%
 

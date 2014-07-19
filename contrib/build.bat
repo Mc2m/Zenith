@@ -29,8 +29,6 @@ IF not exist libs.bat (
 rem create the folder to be on the safe side
 IF not exist %OUTPATH% mkdir "%OUTPATH%"
 
-cd %CBPATH%
-
 rem build contribs
 for %%i in %CONTRIBLIST% do (
 	cd %CONTRIBPATH%
