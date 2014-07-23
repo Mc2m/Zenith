@@ -7,7 +7,7 @@
 #include "transfer.h"
 
 #include <structure/tarray.h>
-#include <thread/tthread.h>
+#include <tthread.h>
 
 typedef struct _ZPipeData {
 	size_t num_data;
