@@ -5,12 +5,14 @@ for v 1.0.0:
 	- Implement shared tables
 	- Improve documentation
 	- Implement better access from lua
+	- Set up license
 
 --REQUIRED
 
-	- Implement build of luajit on build time
-	- Remove non Zenith specific element
 	- Implement tests
 
 --OPTIONAL
 
+	- Add time stamp to data
+	- Expire old data
+	- Add options
