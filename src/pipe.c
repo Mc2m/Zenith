@@ -9,388 +9,340 @@
 #include <structure/tarray.h>
 #include <tthread.h>
 
+#define PIPE_SEND_DATA_LIMIT 1000
+static const char ZPIPEMETA[] = "ZENITH_PIPE_META";
+
 typedef struct _ZPipeData {
-	size_t num_data;
 	TCV *v;
 	lua_State *waiting;
-	TArray *localnumdata;
+	int firstIndex, lastIndex;
 } ZPipeData;
 
-static ZPipeData *pipedata_new(void)
+static ZPipeData *ZPipeDataNew(void)
 {
 	ZPipeData *p = (ZPipeData *) malloc(sizeof(ZPipeData));
 
-	p->num_data = 0;
 	p->v = 0;
 	p->waiting = 0;
-	p->localnumdata = TArrayNew(0);
+	p->firstIndex = 0;
+	p->lastIndex = 1;
 
 	return p;
 }
 
-static void pipedata_free(ZPipeData *p)
+static void ZPipeDataFree(ZPipeData *p)
 {
 	if(p) {
 		TCVFree(p->v);
-		TArrayFree(p->localnumdata,free);
 		free(p);
 	}
 }
 
 static struct ZPipes {
-	lua_State *pipes;
+	lua_State *transfer;
 	TMutex *m;
 	TArray *data;
-	size_t next_id;
-} zenithpipes;
+	size_t nextID;
+} zenithPipes = {0};
 
 void ZPipeInitialize(void)
 {
-	zenithpipes.next_id = 1;
-	zenithpipes.pipes = lua_open();
-	zenithpipes.m = TMutexNew(T_MUTEX_RECURSIVE);
+	zenithPipes.nextID = 1;
+	zenithPipes.transfer = lua_open();
+	zenithPipes.m = TMutexNew(T_MUTEX_RECURSIVE);
 
-	luaL_openlibs(zenithpipes.pipes);
+	luaL_openlibs(zenithPipes.transfer);
 
-	lua_newtable(zenithpipes.pipes); // table containing pipes
-	LGetElement(zenithpipes.pipes,"table","remove",0); // table.remove must stay on top of the stack
+	lua_newtable(zenithPipes.transfer); // table containing pipes
+	LGetElement(zenithPipes.transfer,"table","remove",0); // keep table.remove on top of the stack
 
-	zenithpipes.data = TArrayNew(0);
+	zenithPipes.data = TArrayNew(0);
 }
 
 void ZPipeDestroy(void)
 {
-	if (zenithpipes.pipes) {
-		lua_close(zenithpipes.pipes);
-		TMutexFree(zenithpipes.m);
-		zenithpipes.pipes = 0;
-		zenithpipes.m = 0;
+	if (zenithPipes.transfer) {
+		lua_close(zenithPipes.transfer);
+		TMutexFree(zenithPipes.m);
+		zenithPipes.transfer = 0;
+		zenithPipes.m = 0;
 
-		TArrayFree(zenithpipes.data,(TFreeFunc)pipedata_free);
-		zenithpipes.data = 0;
+		TArrayFree(zenithPipes.data,(TFreeFunc)ZPipeDataFree);
+		zenithPipes.data = 0;
 	}
 }
 
-static inline unsigned char pipe_get_pipe(size_t id) {
-	lua_checkstack(zenithpipes.pipes,2);
+static lua_State *ZPipeFetchTransferState(void) {
+	TMutexLock(zenithPipes.m);
 
-	lua_pushinteger(zenithpipes.pipes,id);
-	lua_gettable(zenithpipes.pipes,1);
-
-	return lua_isnil(zenithpipes.pipes,-1);
+	return zenithPipes.transfer;
 }
 
-static inline void pipe_send(lua_State *L, size_t id, size_t wait, int idx)
-{
-	size_t i, j = idx+1, numdata = lua_gettop(L);
-	ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes.data,id-1);
+static void ZPipeReleaseTransferState(lua_State * L) {
+	TMutexUnlock(zenithPipes.m);
+}
 
-	//printf("sending\n");
+static inline unsigned char ZPipeGetPipe(lua_State *L, size_t id) {
+	char valid;
+	lua_checkstack(L,2);
+
+	lua_pushinteger(L,id);
+	lua_gettable(L,1);
+
+	valid = lua_istable(L,-1);
+	if(!valid) lua_pop(L,1);
+
+	return !valid;
+}
+
+static inline void ZPipeWait(ZPipeData *d, lua_State *L, size_t delay)
+{
+	TMutexLock(zenithPipes.m);
+	d->waiting = L;
+
+	if(!d->v) d->v = TCVNew(zenithPipes.m);
+	else TCVWake(d->v);
+
+	TCVSleep(d->v,delay);
+
+	if(d->waiting == L) d->waiting = 0;
+
+	TMutexUnlock(zenithPipes.m);
+}
+
+static inline int ZPipeSendInternal(lua_State *L, int idx)
+{
+	// Stack
+	//
+	// idx - pipe
+	// idx + 1 - delay
+	// idx + x - data
+
+	// get pipe id
+	size_t id = LGetIntField(L,idx,"id");
+
+	// get internal data
+	ZPipeData *d = (ZPipeData *) TArrayGet(zenithPipes.data,id-1);
+
+	int i;
+	int numdata;
+	int delay;
+
+	// use positive id for the index
+	if(idx < 0) idx = lua_gettop(L) + idx;
+
+	{
+		i = idx + 2; // first data index in stack
+		numdata = lua_gettop(L) - idx - 2; // amount of data
+		delay = luaL_checkinteger(L,idx + 1);
+
+		// Prevent pipe flooding
+		if(i > PIPE_SEND_DATA_LIMIT)
+			luaL_error(L,"Too much data in storage, limit is %d. Wait for receiver to consume.", PIPE_SEND_DATA_LIMIT);
+	
+		// Prevent pipe flooding
+		if(numdata < 1) {
+			lua_pushstring(L,"There is no data in the pipe. No transfer has been done.");
+			return 1;
+		}
+	}
 
 	if(d->waiting) {
-		// copy the sent data directly
-		for(; j <= numdata; ++j) ZTransferData(L,d->waiting,j);
-	} else {
-		size_t *ptr = (size_t *) malloc(sizeof(size_t));
-		*ptr = numdata - idx;
-		//get current pipe
-		if(pipe_get_pipe(id)) {
-			TMutexUnlock(zenithpipes.m);
-			luaL_error(L,"There are no pipe with id %d",id);
-			return;
-		}
-
-		i = d->num_data;
-
-		// keep local numdata
-		TArrayPush(d->localnumdata,ptr);
-
-		for(; j <= numdata; ++j) {
-			lua_pushnumber(zenithpipes.pipes,++i);
-			ZTransferData(L,zenithpipes.pipes,j);
-			lua_settable(zenithpipes.pipes,-3);
-		}
-
-		d->num_data += *ptr;
-
-		lua_pop(zenithpipes.pipes,1); // pop the pipe
-
+		// the other end is listening, send the data directly
+		ZTransferRange(L,d->waiting,i,numdata);
 		//printf("sent\n");
-	}
+	} else {
+		int j;
 
-	if(wait) {
-		d->waiting = L;
-		if(!d->v) d->v = TCVNew(zenithpipes.m);
-		else TCVWake(d->v);
-		TCVSleep(d->v,wait);
-		if(d->waiting == L) d->waiting = 0;
-	}
-}
-
-void ZPipeSend(lua_State *L, int idx)
-{
-	if(zenithpipes.pipes) {
-		//find pipe id
-		size_t id = LGetIntField(L,idx,"id");
-		ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes.data,id-1);
-
-		if(lua_gettop(L) > 1) {
-			TMutexLock(zenithpipes.m);
-			pipe_send(L,id,0,idx);
-			TMutexUnlock(zenithpipes.m);
-		}
-
-		if(d->v) TCVWake(d->v);
-
-		//consume the elements
-		lua_pop(L,lua_gettop(L) - idx + 1);
-	}
-}
-
-void ZPipeCustomSend(lua_State *L, int idx, void (*cpy)(lua_State *from, lua_State *to, int idx))
-{
-	if(zenithpipes.pipes) {
-		//find pipe id
-		size_t id = LGetIntField(L,idx,"id");
-		ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes.data,id-1);
-
-		if(lua_gettop(L) > 1) {
-			TMutexLock(zenithpipes.m);
-			ZTransferSetTableTransferMethod(cpy);
-			pipe_send(L,id,0,idx);
-			ZTransferSetDefaultTableTransferMethod();
-			TMutexUnlock(zenithpipes.m);
-		}
-
-		if(d->v) TCVWake(d->v);
-
-		//consume the elements
-		lua_pop(L,lua_gettop(L) - idx + 1);
-	}
-}
-
-static int zenith_pipe_send(lua_State *L)
-{
-	if(zenithpipes.pipes) {
-		// STACK
-		// 1 - pipe obj
-		// 2 - data
-		// 3 - data
-		// ...
-
-		//find pipe id
-		size_t id = LGetIntField(L,1,"id");
-		ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes.data,id-1);
-
-		if(lua_gettop(L) > 1) {
-			TMutexLock(zenithpipes.m);
-			pipe_send(L,id,0,1);
-			TMutexUnlock(zenithpipes.m);
-		}
-
-		if(d->v) TCVWake(d->v);
-	}
-
-	return 0;
-}
-
-static inline size_t pipe_receive(lua_State *L, size_t id, unsigned char receive_all)
-{
-	ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes.data,id-1);
-	size_t numdata = d->num_data;
-
-	if(numdata) {
-		size_t j = numdata;
-
-		//printf("receiving\n");
-
-		//get the pipe
-		if(pipe_get_pipe(id)) {
-			TMutexUnlock(zenithpipes.m);
-			lua_pop(L,1);
-			luaL_error(L,"There are no pipe with id %d",id);
+		//get current pipe from the transfer state
+		lua_State *transfer = ZPipeFetchTransferState();
+		if(ZPipeGetPipe(transfer, id)) {
+			ZPipeReleaseTransferState(transfer);
+			luaL_error(L,"Internal Error.");
 			return 0;
 		}
 
-		//push the data into the table
-		numdata = 0;
+		//place the data in a table
+		lua_pushinteger(transfer,d->lastIndex++);
+		lua_createtable(L,numdata,0);
 
-		if(receive_all) {
-			TArrayEmpty(d->localnumdata,free);
-		} else {
-			size_t *amount = (size_t *) TArrayPopIndex(d->localnumdata,0);
-			j = *amount;
-			free(amount);
+		//transferthe data
+		for(j = 1; i <= numdata; ++i) {
+			lua_pushnumber(transfer,j++);
+			ZTransferData(L,transfer,i);
+			lua_settable(transfer,-3);
 		}
 
-		while(j--) {
-			lua_pushvalue(zenithpipes.pipes,2); //duplicate table remove function
+		lua_settable(transfer,-3);
 
-			lua_pushvalue(zenithpipes.pipes,-2); // pipe table
-			lua_pushnumber(zenithpipes.pipes,1); // id
-			lua_call(zenithpipes.pipes,2,1);
+		lua_pop(transfer,1); // pop the pipe
 
-			ZTransferData(zenithpipes.pipes,L,-1);
-			numdata++;
-
-			lua_pop(zenithpipes.pipes,1);
-		}
-
-		d->num_data -= numdata;
-
-		//printf("received\n");
-
-		lua_pop(zenithpipes.pipes,1); // pop the pipe
-
-		return numdata;
+		ZPipeReleaseTransferState(transfer);
+		//printf("stored\n");
 	}
+
+	if(d->v) TCVWake(d->v);
+
+	if(delay) // wait for an answer
+		ZPipeWait(d,L,delay);
 
 	return 0;
 }
 
-static int zenith_pipe_receive(lua_State *L)
+static inline int ZPipeTransferDataTo(lua_State *from, lua_State *to, ZPipeData *d)
 {
-	if(zenithpipes.pipes) {
-		// STACK
-		// 1 pipe object
-		// 2 option
+	int numtransfered = 0;
+	int i, numData;
 
-		//find pipe name
+	//fetch the table from firstIndex
+	lua_pushinteger(from,d->firstIndex);
+	lua_gettable(from,-2);
 
-		size_t id = LGetIntField(L,1,"id"), numdata;
-		unsigned char opt = luaL_optint(L,2,1);
-
-		TMutexLock(zenithpipes.m);
-		numdata = pipe_receive(L,id,opt);
-		TMutexUnlock(zenithpipes.m);
-
-		return (int) numdata;
+	numData = lua_objlen(from,-1);
+	if(!lua_checkstack(to,numData)) {
+		// not enough space. stop this
+		lua_pop(from,1);
+		return -1;
 	}
 
-	return 0;
+	//transfer
+	for(i=1; i <= numData; ++i) {
+		//fetch the data from the table
+		lua_pushinteger(from,i);
+		lua_gettable(from,-2);
+
+		//transfer it
+		ZTransferData(from,to,-1);
+		lua_pop(from,1);
+		numtransfered++;
+	}
+
+	//remove that table
+	lua_pop(from,1);
+	lua_pushinteger(from,d->firstIndex);
+	lua_pushnil(from);
+	lua_settable(from,-3);
+
+	return numtransfered;
 }
 
-static int zenith_pipe_send_wait(lua_State *L)
+static inline int ZPipeReceiveInternal(lua_State *L, int idx)
 {
-	if(zenithpipes.pipes) {
-		// STACK
-		// 1 - pipe obj
-		// 2 - timeout
-		// 3 - data
-		// 4 - data
-		// ...
+	// Stack
+	//
+	// idx - pipe
+	// idx + 1 - timeout
+	// idx + x - receive all
 
-		if(lua_gettop(L) > 1) {
-			//find pipe id
-			size_t id = LGetIntField(L,1,"id");
-			size_t timeout = luaL_checkint(L,2);
-			int numdata = lua_gettop(L);
+	// get pipe id
+	size_t id = LGetIntField(L,idx,"id");
 
-			TMutexLock(zenithpipes.m);
-			pipe_send(L,id,timeout,2);
-			TMutexUnlock(zenithpipes.m);
+	// get internal data
+	ZPipeData *d = (ZPipeData *) TArrayGet(zenithPipes.data,id-1);
 
-			return lua_gettop(L) - numdata;
+	char allData;
+	int numtransfered = 0;
+	lua_State *transfer;
+
+	// use positive id for the index
+	if(idx < 0) idx = lua_gettop(L) + idx;
+
+	allData = luaL_optint(L,idx + 2,1);
+
+	transfer = ZPipeFetchTransferState();
+	if(d->lastIndex > 1) {
+		//fetch the pipe data
+		if(ZPipeGetPipe(transfer, id)) {
+			ZPipeReleaseTransferState(transfer);
+			luaL_error(L,"Internal Error.");
+			return 0;
 		}
-	}
 
-	return 0;
-}
+		do {
+			int transfered = ZPipeTransferDataTo(transfer,L,d);
+			if(transfered == -1) break;
+			numtransfered += transfered;
+			d->firstIndex++;
+		} while(allData && d->firstIndex != d->lastIndex);
 
-static int zenith_pipe_listen(lua_State *L)
-{
-	if(zenithpipes.pipes) {
-		// STACK
-		// 1 - pipe obj
-		// 2 - timeout
-		// 3 - option
+		//clean up
+		lua_pop(transfer,1);
 
-		//find pipe id
-		size_t id = LGetIntField(L,1,"id");
-		ZPipeData *d = (ZPipeData *) TArrayGet(zenithpipes.data,id-1);
-		size_t numdata;
-		size_t timeout = luaL_checkint(L,2);
-		unsigned char opt = luaL_optint(L,3,1);
-
-		TMutexLock(zenithpipes.m);
-
-		if(d->num_data) {
-			numdata = pipe_receive(L,id,opt);
-		} else {
-			d->waiting = L;
-			if(!d->v) d->v = TCVNew(zenithpipes.m);
-			TCVSleep(d->v,timeout);
-			if(d->waiting == L) d->waiting = 0;
-			numdata = lua_gettop(L) - 1;
+		if(d->firstIndex == d->lastIndex) {
+			// reset the indexes
+			d->firstIndex = 0;
+			d->lastIndex = 1;
 		}
-	
-		TMutexUnlock(zenithpipes.m);
-
-		return numdata;
-	}
-
-	return 0;
-}
-
-static inline void access_table(lua_State *L)
-{
-	lua_createtable(L,0,3);
-
-	LSetFunctionField(L,-1,"send",zenith_pipe_send);
-	LSetFunctionField(L,-1,"wait",zenith_pipe_send_wait);
-	LSetFunctionField(L,-1,"listen",zenith_pipe_listen);
-	LSetFunctionField(L,-1,"receive",zenith_pipe_receive);
-
-	lua_pushvalue(L,-1);
-	lua_setfield(L,-2,"__index");
-
-	lua_pushvalue(L,-1);
-	lua_setfield(L,-3,"access");
-}
-
-void set_pipe_table(lua_State *L, const char *name)
-{
-	// check for Zenith table
-	lua_getglobal(L,"Zenith");
-	if(lua_isnil(L,-1)) {
-		lua_pop(L,1);
-
-		lua_createtable(L,0,1);
-		lua_pushvalue(L,-1);
-		lua_setglobal(L,"Zenith");
-	}
-
-	// check for Pipe table
-	lua_getfield(L,-1,"Pipe");
-	if(lua_isnil(L,-1)) {
-		lua_pop(L,1);
-
-		//pipe table
-		lua_createtable(L,0,2);
-
-		//access table
-		access_table(L);
-
-		//pipes table
-		lua_createtable(L,0,1);
-		lua_pushvalue(L,-1);
-		lua_setfield(L,-4,"pipes");
-
-		lua_pushvalue(L,-3);
-		lua_setfield(L,-5,"Pipe");
+		ZPipeReleaseTransferState(transfer);
 	} else {
-		lua_getfield(L,-1,"access");
-		lua_getfield(L,-2,"pipes");
+		ZPipeReleaseTransferState(transfer);
+		// no data in this pipe
+		// do we have to wait ?
+		int delay = luaL_optint(L, idx + 1, 0);
+
+		if(delay) ZPipeWait(d,L,delay);
+
+		numtransfered = lua_gettop(L) - (idx + 2);
+		if(numtransfered < 0) numtransfered = 0;
 	}
+
+	return numtransfered;
+}
+
+int ZPipeSend(lua_State *L, int idx)
+{
+	int data;
+	if(zenithPipes.transfer) {
+		//transfer
+		data = ZPipeSendInternal(L,idx);
+
+		//consume the elements
+		if(idx < 0) idx = lua_gettop(L) + idx;
+		lua_pop(L,lua_gettop(L) - idx + 1);
+	}
+
+	return data;
+}
+
+static int ZPipeLuaSend(lua_State *L)
+{
+	int data;
+	if(zenithPipes.transfer) {
+		//transfer
+		data = ZPipeSendInternal(L,1);
+	}
+	return data;
+}
+
+int ZPipeReceive(lua_State *L, int idx)
+{
+	if(zenithPipes.transfer)
+		return ZPipeReceiveInternal(L,idx);
+
+	return 0;
+}
+
+static int ZPipeLuaReceive(lua_State *L)
+{
+	if(zenithPipes.transfer)
+		return ZPipeReceiveInternal(L,1);
+
+	return 0;
+}
+
+void ZPipeSetState(lua_State *L, const char *name)
+{
+	lua_getfield(L,-1,"access");
+	lua_getfield(L,-2,"Pipes");
 
 	// STACK
 	// -1 pipes table
 	// -2 access table
 	// -3 Pipe table
-	// -4 Zenith table
 	
+	// create pipe
 	lua_createtable(L,0,1);
-	LSetIntField(L,-1,"id",zenithpipes.next_id);
+	LSetIntField(L,-1,"id",zenithPipes.nextID);
 
 	lua_pushvalue(L,-1);
 	lua_setfield(L,-2,"__index");
@@ -405,34 +357,56 @@ void set_pipe_table(lua_State *L, const char *name)
 	lua_pop(L,4);
 }
 
-void ZPipeCreate(lua_State *L1,lua_State *L2, const char *name)
+static void ZPipeCreateInternal(void)
+{
+	TMutexLock(zenithPipes.m);
+	lua_pushinteger(zenithPipes.transfer,zenithPipes.nextID);
+	lua_newtable(zenithPipes.transfer);
+	lua_settable(zenithPipes.transfer,1);
+
+	TArrayPush(zenithPipes.data,ZPipeDataNew());
+	TMutexUnlock(zenithPipes.m);
+}
+
+void ZPipeCreate(const char *name, lua_State *L1, lua_State *L2)
 {
 	char namerplcmnt[64];
 	if(L1 == L2) return;
 
-	if(!zenithpipes.pipes) ZPipeInitialize();
+	LGetElement(L1,"Zenith","Pipe",NULL);
+	if(!lua_istable(L1,-1)) return;
+
+	LGetElement(L2,"Zenith","Pipe",NULL);
+	if(!lua_istable(L2,-1)) return;
 
 	if(!name) {
-		size_t i1,i2;
-		ZStateFromState(L1,&i1);
-		ZStateFromState(L2,&i2);
-
-		snprintf(namerplcmnt,sizeof(namerplcmnt),"pipe%d_%d",i1,i2);
-
+		snprintf(namerplcmnt,sizeof(namerplcmnt),"pipe%d",zenithPipes.nextID);
 		name = namerplcmnt;
 	}
 
 	//set pipe
-	TMutexLock(zenithpipes.m);
-	lua_pushinteger(zenithpipes.pipes,zenithpipes.next_id);
-	lua_newtable(zenithpipes.pipes);
-	lua_settable(zenithpipes.pipes,1);
+	ZPipeCreateInternal();
 
-	TArrayPush(zenithpipes.data,pipedata_new());
-	TMutexUnlock(zenithpipes.m);
+	ZPipeSetState(L1,name);
+	ZPipeSetState(L2,name);
 
-	set_pipe_table(L1,name);
-	set_pipe_table(L2,name);
+	zenithPipes.nextID++;
+}
 
-	zenithpipes.next_id++;
+static const struct luaL_Reg ZPipeAccessTableFunctions[] = {
+	{"send",ZPipeLuaSend},
+	{"receive",ZPipeLuaReceive},
+	{NULL,NULL}
+};
+
+void ZPipeRegister(lua_State *L)
+{
+	//this supposes that Zenith is on top
+	lua_newtable(L);
+	lua_setfield(L, -2, "Pipes");
+
+	//create access table
+	lua_createtable(L,0,2);
+	luaL_openlib(L, 0, ZPipeAccessTableFunctions, 0);
+	lua_setfield(L, -2, "access");
 }

@@ -7,19 +7,18 @@
 
 #include "tdefine.h"
 
-static int function_cpy(lua_State *L,const char *p,size_t size,luaL_Buffer *B)
+static int ZTransferFunctionInternal(lua_State *L,const char *p,size_t size,luaL_Buffer *B)
 {
 	luaL_addlstring(B,p,size);
 	return 0;
 }
 
-void copy_table(lua_State *from, lua_State *to, int idx)
+void ZTransferTable(lua_State *from, lua_State *to, int idx)
 {
-	lua_checkstack(from,2);
-	lua_checkstack(to,3);
+	if(!lua_checkstack(from,2)) return;
+	if(!lua_checkstack(to,2)) return;
 
 	if(idx < 0) idx--;
-
 
 	lua_newtable(to);
 
@@ -38,26 +37,14 @@ void copy_table(lua_State *from, lua_State *to, int idx)
 	if(idx < 0) idx++;
 
 	if(lua_getmetatable(from,idx)) {
-		copy_table(from,to,-1);
+		ZTransferTable(from,to,-1);
 
 		lua_setmetatable(to,-2);
 		lua_pop(from,1);
 	}
 }
 
-static void (*tbl_cpy)(lua_State *from, lua_State *to, int idx) = copy_table;
-
-void ZTransferSetTableTransferMethod(void (*cpy)(lua_State *from, lua_State *to, int idx))
-{
-	tbl_cpy = cpy;
-}
-
-void ZTransferSetDefaultTableTransferMethod()
-{
-	tbl_cpy = copy_table;
-}
-
-void copy_function(lua_State *from, lua_State *to, int idx)
+void ZTranferFunction(lua_State *from, lua_State *to, int idx)
 {
 	if(lua_iscfunction(from,idx)) {
 		lua_pushcfunction(to,lua_tocfunction(from,idx));
@@ -71,7 +58,7 @@ void copy_function(lua_State *from, lua_State *to, int idx)
 
 		if(pushfunc) lua_pushvalue(from,idx);
 
-		if(lua_dump(from,(lua_Writer) function_cpy,&B))
+		if(lua_dump(from,(lua_Writer) ZTransferFunctionInternal,&B))
 		{
 			luaL_error(from, "internal error: function dump failed.");
 		}
@@ -91,10 +78,12 @@ void copy_function(lua_State *from, lua_State *to, int idx)
 
 void ZTransferData(lua_State *from, lua_State *to, int idx)
 {
-	int type = lua_type(from,idx);
+	int type;
 
-	TAssert(lua_checkstack(to,1));
+	if(!from || !to) return;
+	if(!lua_checkstack(to,1)) return;
 
+	type = lua_type(from,idx);
 	if(type == LUA_TNIL) {
 		lua_pushnil(to);
 	} else if(type == LUA_TBOOLEAN) {
@@ -106,10 +95,9 @@ void ZTransferData(lua_State *from, lua_State *to, int idx)
 	} else if(type == LUA_TSTRING) {
 		lua_pushstring(to,lua_tostring(from,idx));
 	} else if(type == LUA_TTABLE) {
-		if(tbl_cpy) tbl_cpy(from,to,idx);
-		else lua_pushnil(to);
+		ZTransferTable(from,to,idx);
 	} else if(type == LUA_TFUNCTION) {
-		copy_function(from,to,idx);
+		ZTranferFunction(from,to,idx);
 	} else if(type == LUA_TUSERDATA) {
 		//TODO probably
 	}
@@ -119,6 +107,7 @@ void ZTransferRange(lua_State *from, lua_State *to, int start, int end)
 {
 	int i;
 
+	if(!from || !to) return;
 	if(start > end) TSWAPT(start,end,int);
 
 	for(i = start; i < end; ++i) ZTransferData(from,to,i);
