@@ -85,6 +85,9 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\tests\zenith.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\tests\zenith_test.lua" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

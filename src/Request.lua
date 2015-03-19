@@ -12,7 +12,7 @@ end
 
 function Request:prepare()
     --return data and wait(nil)
-    self.data['execute'] = self.execute
+    self.data.execute = self.execute
     return self.data
 end
 

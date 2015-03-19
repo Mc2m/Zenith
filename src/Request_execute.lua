@@ -15,3 +15,6 @@ function ExecuteRequest:execute(data)
     table.remove(data,1)
     if type(f) == 'function' then return f(unpack(data)) end
 end
+
+return ExecuteRequest
+

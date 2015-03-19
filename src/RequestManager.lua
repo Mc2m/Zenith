@@ -43,8 +43,8 @@ function RequestManager:receive()
                 if coroutine then
                     -- create request in coroutine
                     request = coroutine.create(data.execute)
-                    result = {coroutine.resume(request, data)}
-                    if coroutine.status(result) ~= 'dead' then
+                    result = {coroutine.resume(request, nil, data)}
+                    if coroutine.status(request) ~= 'dead' then
                         self.requests[name] = request
                     end
                 else

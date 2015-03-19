@@ -180,6 +180,8 @@ void ZTransferData(lua_State *from, lua_State *to, int idx)
 	type = lua_type(from,idx);
 	if(type == LUA_TNONE) return;
 
+	if(idx < 0) idx += lua_gettop(from)+1;
+
 	//We need to keep track of the elements in a separate table for complex elements
 	if(type == LUA_TTABLE) {
 		if(!lua_checkstack(to,1)) return;
@@ -199,12 +201,17 @@ void ZTransferData(lua_State *from, lua_State *to, int idx)
 	}
 }
 
-void ZTransferRange(lua_State *from, lua_State *to, int start, int end)
+void ZTransferRange(lua_State *from, lua_State *to, int start, int range)
 {
-	int i;
+	int end;
+	int top;
 
 	if(!from || !to) return;
-	if(start > end) TSWAPT(start,end,int);
 
-	for(i = start; i < end; ++i) ZTransferData(from, to, i);
+	top = lua_gettop(from);
+	end = start+(range-1);
+	if(top < end) end = (top - start) + 1;
+	
+
+	for(; start <= end; ++start) ZTransferData(from, to, start);
 }

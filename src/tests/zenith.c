@@ -9,6 +9,7 @@
 
 #include <debugging/tdebug.h>
 #include <io/trw.h>
+#include <tthread.h>
 
 #include <string.h>
 
@@ -126,7 +127,6 @@ int ZTestTransferTable(lua_State *L1, lua_State *L2)
 	if(lua_istable(L2,1)) {
 		lua_pushinteger(L2,1);
 		lua_gettable(L2,1);
-		LPrintStack(L2);
 
 		if(lua_topointer(L2, -1) == lua_topointer(L2, 1))
 			result++;
@@ -222,7 +222,6 @@ int ZTestTransfer(void)
 	ZTransferData(L1,L2,1);
 	if(lua_isfunction(L2,1)) {
 		lua_call(L2,0,1);
-		LPrintStack(L2);
 		if(lua_isnumber(L2,1) && lua_tointeger(L2,1) == 3)
 			result++;
 	}
@@ -241,9 +240,187 @@ int ZTestTransfer(void)
 	return result;
 }
 
+#define NUM_PIPE_TESTS 6
+
+int ZTestPipeThread1(lua_State *L)
+{
+	int amount = 0;
+
+	lua_pushvalue(L,1);
+	lua_pushinteger(L,5000);
+	lua_pushinteger(L,1);
+	amount = ZPipeSend(L,2);
+
+	if(amount > 1) amount = 1;
+
+	return amount;
+}
+
+int ZTestPipeThread2(lua_State *L)
+{
+	int amount = 0;
+
+	while (!amount) {
+		lua_pushvalue(L,1);
+		lua_pushinteger(L,1000);
+		amount = ZPipeReceive(L,2);
+	}
+	lua_pop(L,1);
+
+	lua_pushvalue(L,1);
+	lua_pushinteger(L,0);
+	lua_pushinteger(L,1);
+	ZPipeSend(L,2);
+
+	return 0;
+}
+
 int ZTestPipe(void)
 {
+	int result = 0;
+	int amount;
+	TThread *thread1, *thread2;
 
+	lua_State *L1 = ZStateNew("Test State 1");
+	lua_State *L2 = ZStateNew("Test State 2");
+
+	ZenithOpenLibrary(L1,ZENITH_LIBRARY_PIPE);
+	ZenithOpenLibrary(L2,ZENITH_LIBRARY_PIPE);
+
+	//test pipe creation
+	ZPipeCreate("Test pipe",L1,L2);
+
+	LGetElement(L1,"Zenith","Pipe","Pipes","Test pipe",NULL);
+	LGetElement(L2,"Zenith","Pipe","Pipes","Test pipe",NULL);
+	if(lua_istable(L1,1) && lua_istable(L2,1)) {
+		result++;
+	} else {
+		//no need to continue
+		ZStateClose(L1);
+		ZStateClose(L2);
+		return result;
+	}
+
+	// the pipe exists now we can test sending and receiving
+
+	// send malformed from c
+	lua_pushvalue(L1,1);
+	lua_pushstring(L1, "love to test");
+	ZPipeSend(L1,2);
+
+	if(lua_isstring(L1,-1)) {
+		result++;
+		lua_pop(L1,1);
+	}
+
+	// send correct from c
+	lua_pushvalue(L1,1);
+	lua_pushinteger(L1,0);
+	lua_pushstring(L1, "love to test");
+	ZPipeSend(L1,2);
+
+	if(lua_gettop(L1) == 1) {
+		result++;
+	}
+
+	// receive from c
+	lua_pushvalue(L2,1);
+	lua_pushinteger(L2,0);
+	ZPipeReceive(L2,2);
+	
+	if(lua_isstring(L2,2) && !strcmp("love to test",lua_tostring(L2,2))) {
+		result++;
+	}
+	lua_pop(L2,1);
+
+	// send 3 groups of data
+	lua_pushvalue(L1,1);
+	lua_pushinteger(L1,0);
+	lua_pushstring(L1, "send");
+	lua_pushinteger(L1, 1);
+	ZPipeSend(L1,2);
+
+	lua_pushvalue(L1,1);
+	lua_pushinteger(L1,0);
+	lua_pushstring(L1, "send");
+	lua_pushinteger(L1, 2);
+	ZPipeSend(L1,2);
+
+	lua_pushvalue(L1,1);
+	lua_pushinteger(L1,0);
+	lua_pushstring(L1, "send");
+	lua_pushinteger(L1, 3);
+	ZPipeSend(L1,2);
+
+	// receive the first group
+	lua_pushvalue(L2,1);
+	lua_pushinteger(L2,0);
+	lua_pushboolean(L2,0);
+	amount = ZPipeReceive(L2,2);
+	
+	if(amount == 2) {
+		char validstr = lua_isstring(L2,2) && !strcmp("send",lua_tostring(L2,2));
+		char validint = lua_isnumber(L2,3) && lua_tointeger(L2,3) == 1;
+		if(validstr && validint)
+			result++;
+	}
+	lua_pop(L2,lua_gettop(L2)-1);
+
+	// receive the rest
+	lua_pushvalue(L2,1);
+	lua_pushinteger(L2,0);
+	amount = ZPipeReceive(L2,2);
+	
+	if(amount == 4) {
+		char validint = lua_isnumber(L2,3) && lua_tointeger(L2,3) == 2;
+		validint = validint && lua_isnumber(L2,5) && lua_tointeger(L2,5) == 3;
+		if(validint)
+			result++;
+	}
+	lua_pop(L2,lua_gettop(L2)-1);
+
+	// create threads
+	thread2 = TThreadCreate(ZTestPipeThread2,L2);
+	thread1 = TThreadCreate(ZTestPipeThread1,L1);
+
+	TThreadJoin(thread2);
+	result += TThreadJoin(thread1);
+
+	ZStateClose(L1);
+	ZStateClose(L2);
+
+	return result;
+}
+
+int ZTestRequest(void)
+{
+	int result = 0;
+
+	lua_State *L1 = ZStateNew("Test State 1");
+	lua_State *L2 = ZStateNew("Test State 2");
+
+	luaL_openlibs(L1);
+	luaL_openlibs(L2);
+
+	ZenithOpenLibrary(L1,ZENITH_LIBRARY_PIPE);
+	ZenithOpenLibrary(L2,ZENITH_LIBRARY_PIPE);
+
+	//test pipe creation
+	ZPipeCreate("Test pipe",L1,L2);
+
+	LLoad(L1,"zenith_test.lua");
+	
+	LParse(L2,"local RequestManager = require('RequestManager') RequestManager:receive()");
+
+	lua_getglobal(L2,"test");
+	if(lua_isstring(L2,1)) {
+		result++;
+	}
+
+	ZStateClose(L1);
+	ZStateClose(L2);
+
+	return result;
 }
 
 void ZTestDestroy(void)
@@ -276,9 +453,16 @@ int main(int argc, char **argv)
 		TRWWrite(output,"Cannot continue testing. Aborting.\n");
 		return 0;
 	}
-	//ZTestPipe();
-	//ZTestRequestManager();
-	//ZTestExecuteRequest();
+
+	TRWWrite(output,"Testing Pipe... ");
+	result = ZTestPipe();
+	TRWWrite(output,"Completed %d/%d tests\n",result,NUM_PIPE_TESTS);
+	if(result != NUM_PIPE_TESTS) {
+		TRWWrite(output,"Cannot continue testing. Aborting.\n");
+		return 0;
+	}
+
+	ZTestRequest();
 
 	TRWWrite(output,"Tests have been completed.\n");
 
