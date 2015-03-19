@@ -13,7 +13,7 @@ end
 function Request:prepare()
     --return data and wait(nil)
     self.data.execute = self.execute
-    return self.data
+    return self.data,self.delay
 end
 
 function Request:execute(data)

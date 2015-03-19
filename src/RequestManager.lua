@@ -47,6 +47,12 @@ function RequestManager:receive()
                     if coroutine.status(request) ~= 'dead' then
                         self.requests[name] = request
                     end
+
+                    if #result > 1 then
+						table.remove(result,1)
+					else
+						result = nil
+					end
                 else
                     -- execute it
                     result = {data:execute()}
