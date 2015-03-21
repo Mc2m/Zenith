@@ -27,8 +27,7 @@ TLIBS    := $(OUT) luajit dl lux terra pthread m
 TOUT     := $(OUT)_test
 
 #all
-all: contrib $(OBJSPCH) $(OBJECTS) $(TOBJS)
-	$(AR) lib$(OUT).a $(OBJECTS)
+all: contrib lib $(TOBJS)
 	$(LD) -o $(TOUT) $(TOBJS) -L$(WORKDIR) $(CTRBSPTH:%=-L%) $(TLIBS:%=-l%)
 	cp tests/$(OUT)_test.lua .
 
@@ -40,7 +39,6 @@ clean:
 .PHONY: clean-contrib
 clean-contrib:
 	$(foreach var,$(CONTRIBS),$(MAKE) clean -C $(var);)
-	$(RM) $(CONTDIR)lib*.a
 
 #library
 .PHONY: lib
@@ -52,7 +50,7 @@ lib: $(OBJSPCH) $(OBJECTS)
 contrib:
 	$(MAKE) BUILDMODE=static -C $(CTRBDIR)luajit
 	$(MAKE) -C $(CTRBDIR)lux
-	$(MAKE) -C $(CTRBDIR)terra
+	$(MAKE) lib -C $(CTRBDIR)terra
 	
 #compiling the precompiled header
 $(OBJSDIR)%.h.gch:%.h $(CMF)
