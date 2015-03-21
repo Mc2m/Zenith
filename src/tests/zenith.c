@@ -380,8 +380,8 @@ int ZTestPipe(void)
 	lua_pop(L2,lua_gettop(L2)-1);
 
 	// create threads
-	thread2 = TThreadCreate(ZTestPipeThread2,L2);
-	thread1 = TThreadCreate(ZTestPipeThread1,L1);
+	thread2 = TThreadCreate((TThreadFunc) ZTestPipeThread2,L2);
+	thread1 = TThreadCreate((TThreadFunc) ZTestPipeThread1,L1);
 
 	TThreadJoin(thread2);
 	result += TThreadJoin(thread1);

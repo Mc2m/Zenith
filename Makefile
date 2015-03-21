@@ -7,5 +7,7 @@ test:
 
 clean:
 	$(MAKE) clean -C src
-	
+
+clean-contrib:
+	$(MAKE) clean-contrib -C src	
 	

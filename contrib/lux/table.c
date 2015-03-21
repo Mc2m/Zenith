@@ -75,7 +75,6 @@ static int table_binary_insert(lua_State *L)
 
 static int table_help(lua_State *L)
 {
-	UNREFERENCED_PARAMETER(L);
 	printf("Table:\n");
 	printf("Contains functions specific to table manipulation.\n\n");
 	printf("Content:\n");

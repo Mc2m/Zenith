@@ -8,9 +8,11 @@ CFLAGS   += -c -Wall -D_DEBUG
 
 WORKDIR  := $(shell pwd)
 OBJSDIR  := .objs/
-CONTDIR  := ../contrib/
+CTRBDIR  := ../contrib/
 
-CONTRIBS := $(shell ls -d $(CONTDIR)*/) 
+CONTRIBS := $(shell ls -d $(CTRBDIR)*/ | grep -v "autobuild")
+CTRBSPTH := $(shell for i in ${CONTRIBS}; do if [ -d "$${i}src" ]; then echo "$${i}src"; else echo "$$i"; fi; done)
+
 
 OUT      := zenith
 SOURCES  := $(shell find -type f -name '*.c' -not -iwholename '*tests*' | cut -c 3-)
@@ -21,47 +23,45 @@ CMF      := $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
 
 TSRC     := $(shell find -type f -name '*.c' -iwholename '*tests*' | cut -c 3-)
 TOBJS    := $(TSRC:%.c=$(OBJSDIR)%.o)
-TLIBS    := $(OUT) luajit dl terra pthread m
+TLIBS    := $(OUT) luajit dl lux terra pthread m
 TOUT     := $(OUT)_test
 
 #all
-all: $(CONTRIBS) $(OBJSPCH) $(OBJECTS)
+all: contrib $(OBJSPCH) $(OBJECTS) $(TOBJS)
 	$(AR) lib$(OUT).a $(OBJECTS)
+	$(LD) -o $(TOUT) $(TOBJS) -L$(WORKDIR) $(CTRBSPTH:%=-L%) $(TLIBS:%=-l%)
+	cp tests/$(OUT)_test.lua .
 
 #cleaning
 .PHONY: clean
 clean:
-	$(RM) $(OBJSDIR) $(TOUT) lib$(OUT).a
+	$(RM) $(OBJSDIR) $(TOUT) lib$(OUT).a $(OUT)_test.lua
 	
 .PHONY: clean-contrib
 clean-contrib:
 	$(foreach var,$(CONTRIBS),$(MAKE) clean -C $(var);)
 	$(RM) $(CONTDIR)lib*.a
-	
-#tests
-.PHONY: test
-test: all $(TOBJS)
-	$(LD) -o $(TOUT) $(TOBJS) -L$(WORKDIR) -L$(CONTDIR) $(TLIBS:%=-l%)
 
+#library
+.PHONY: lib
+lib: $(OBJSPCH) $(OBJECTS)
+	$(AR) lib$(OUT).a $(OBJECTS)
+	
 #compiling the contribs
 .PHONY: contrib
 contrib:
-	$(MAKE) -C $@
-	mv $@src/lib*.a $(CONTDIR)
-	
-$(CONTRIBS): $(CMF)
-#TODO check if the lib already exists
-	$(MAKE) -C $@
-	mv $@src/lib*.a $(CONTDIR)
+	$(MAKE) BUILDMODE=static -C $(CTRBDIR)luajit
+	$(MAKE) -C $(CTRBDIR)lux
+	$(MAKE) -C $(CTRBDIR)terra
 	
 #compiling the precompiled header
 $(OBJSDIR)%.h.gch:%.h $(CMF)
 	@dirname $@ | xargs mkdir -p 2>/dev/null || echo "$@ already exists" >/dev/null
 	@echo "Precompiling header $@..."
-	@$(CC) $(CFLAGS) $(CONTRIBS:%=-I%src) -o $@ -c $< || echo "error. Disabling precompiled header"
+	@$(CC) $(CFLAGS) ${CTRBSPTH:%=-I%} -o $@ -c $< || echo "error. Disabling precompiled header"
 	@echo "...Done"
 
 #compiling source files
 $(OBJSDIR)%.o: %.c $(CMF)
 	@dirname $@ | xargs mkdir -p 2>/dev/null || echo "$@ already exists" >/dev/null
-	$(CC) $(CFLAGS) -I$(WORKDIR) $(CONTRIBS:%=-I%src) $(PCH_FILE:%.h=-include %.h) -c $< -o $@
+	$(CC) $(CFLAGS) -I$(WORKDIR) $(CTRBSPTH:%=-I%) $(PCH_FILE:%.h=-include %.h) -c $< -o $@

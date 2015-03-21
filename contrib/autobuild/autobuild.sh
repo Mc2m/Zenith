@@ -178,3 +178,4 @@ set -o errexit   ## set -e : exit the script if any statement returns a non-true
 trap errorHandler ERR
 
 autoBuild $@
+

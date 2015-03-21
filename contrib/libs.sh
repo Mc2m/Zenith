@@ -67,3 +67,4 @@ lux() {
 
 luaJIT
 lux
+
