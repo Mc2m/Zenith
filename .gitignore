@@ -2,8 +2,10 @@ obj/
 ipch/
 lib/
 bin/
+.objs/
 *.user
 *.suo
 *.opensdf
 *.sdf
 *.pd_
+*.a
