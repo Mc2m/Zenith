@@ -297,11 +297,13 @@ static inline int ZPipeReceiveInternal(lua_State *L, int idx)
 		}
 		ZPipeReleaseTransferState(transfer);
 	} else {
+		int delay, top;
+
 		ZPipeReleaseTransferState(transfer);
 		// no data in this pipe
 		// do we have to wait ?
-		int delay = lua_tointeger(L, idx + 1);
-		int top = lua_gettop(L);
+		delay = lua_tointeger(L, idx + 1);
+		top = lua_gettop(L);
 
 		if(delay) ZPipeWait(d,L,delay);
 
