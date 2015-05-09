@@ -55,11 +55,11 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
 	<PreBuildEvent>
-      <Command>call "$(ProjectDir)..\..\contrib\build.bat" $(SolutionDir) $(Configuration) $(Platform)</Command>
+      <Command>cd $(SolutionDir) &amp;&amp; ..\..\contrib\autobuild\autobuild.sh -d -s ../../contrib/libs.sh ../../bin/ lib/$(Platform)/Debug/ obj/$(Configuration)/</Command>
       <Message>build contribs</Message>
     </PreBuildEvent>
     <CustomBuildStep>
-      <Command>call "$(ProjectDir)..\..\contrib\build.bat" clean $(SolutionDir) $(Configuration) $(Platform)</Command>
+      <Command>cd $(SolutionDir) &amp;&amp; ..\..\contrib\autobuild\autobuild.sh -c -d -s ../../contrib/libs.sh ../../bin/ lib/$(Platform)/Debug/ obj/$(Configuration)/</Command>
       <Message>Cleaning</Message>
       <Outputs>$(OutDir)nonexistent.lib</Outputs>
     </CustomBuildStep>
@@ -83,17 +83,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\tests\pipe_test.c" />
-    <ClCompile Include="..\..\src\tests\request_manager_test.c" />
-    <ClCompile Include="..\..\src\tests\state_test.c" />
-    <ClCompile Include="..\..\src\tests\transfer_test.c" />
-    <ClCompile Include="..\..\src\tests\zenith_test.c" />
+    <ClCompile Include="..\..\src\tests\zenith.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\tests\pipe_test.h" />
-    <ClInclude Include="..\..\src\tests\request_manager_test.h" />
-    <ClInclude Include="..\..\src\tests\state_test.h" />
-    <ClInclude Include="..\..\src\tests\transfer_test.h" />
+    <ClInclude Include="..\..\src\tests\zenith_test.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

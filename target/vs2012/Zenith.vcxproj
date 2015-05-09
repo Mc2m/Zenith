@@ -67,8 +67,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\pipe.c" />
-    <ClCompile Include="..\..\src\request.c" />
-    <ClCompile Include="..\..\src\request_execute.c" />
     <ClCompile Include="..\..\src\state.c" />
     <ClCompile Include="..\..\src\stdafx.c">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -78,12 +76,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\pipe.h" />
-    <ClInclude Include="..\..\src\request.h" />
-    <ClInclude Include="..\..\src\request_execute.h" />
     <ClInclude Include="..\..\src\state.h" />
     <ClInclude Include="..\..\src\stdafx.h" />
     <ClInclude Include="..\..\src\transfer.h" />
     <ClInclude Include="..\..\src\zenith.h" />
+    <ClInclude Include="..\..\src\RequestManager.lua" />
+    <ClInclude Include="..\..\src\Request.lua" />
+    <ClInclude Include="..\..\src\Request_execute.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
