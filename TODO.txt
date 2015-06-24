@@ -2,8 +2,6 @@
 for v 1.0.0:
 
 --PRIORITY
-	- Set data direction for pipes
-	- Ensure proper retrieval behaviour
 	- Improve documentation
 	- Implement better access from lua
 	- Set up license
@@ -11,6 +9,7 @@ for v 1.0.0:
 --REQUIRED
 
 	- Implement tests
+	- Handle data binding
 
 --OPTIONAL
 
