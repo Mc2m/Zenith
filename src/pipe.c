@@ -136,7 +136,7 @@ static inline int ZPipeSendInternal(lua_State *L, int idx)
 	}
 
 	// get pipe id
-	id = LGetIntField(L,idx,"id");
+	id = *((size_t *)lua_touserdata(L, idx));
 	// get internal data
 	d = (ZPipeData *) TArrayGet(zenithPipes.data,id-1);
 
@@ -175,7 +175,10 @@ static inline int ZPipeSendInternal(lua_State *L, int idx)
 
 		//place the data in a table
 		lua_pushinteger(transfer,d->lastIndex++);
-		lua_createtable(transfer,numdata,0);
+		lua_createtable(transfer, numdata, 1);
+
+		//store id for source identification
+		LSetIntField(L, -1, "id", id);
 
 		//transfer the data
 		for(j = 1; j <= numdata; ++i, ++j) {
@@ -204,39 +207,43 @@ static inline int ZPipeSendInternal(lua_State *L, int idx)
 	return 0;
 }
 
-static inline int ZPipeTransferDataTo(lua_State *from, lua_State *to, ZPipeData *d)
+static inline int ZPipeTransferDataTo(lua_State *from, lua_State *to, ZPipeData *d, int index, size_t id)
 {
 	int numtransfered = 0;
 	int i, numData;
 
 	//fetch the table from firstIndex
-	lua_pushinteger(from,d->firstIndex);
-	lua_gettable(from,-2);
+	lua_pushinteger(from, index);
+	lua_gettable(from, -2);
 
-	numData = lua_objlen(from,-1);
-	if(!lua_checkstack(to,numData)) {
-		// not enough space. stop this
-		lua_pop(from,1);
-		return -1;
+	if (LGetIntField(from, -1, "id") != id) {
+		numData = lua_objlen(from, -1);
+		if (!lua_checkstack(to, numData)) {
+			// not enough space. stop this
+			lua_pop(from, 1);
+			return -1;
+		}
+
+		//transfer
+		for (i = 1; i <= numData; ++i) {
+			//fetch the data from the table
+			lua_pushinteger(from, i);
+			lua_gettable(from, -2);
+
+			//transfer it
+			ZTransferData(from, to, -1);
+			lua_pop(from, 1);
+			numtransfered++;
+		}
+
+		//remove that table
+		if (index == d->firstIndex) d->firstIndex++;
+		lua_pushinteger(from, index);
+		lua_pushnil(from);
+		lua_settable(from, -4);
 	}
 
-	//transfer
-	for(i=1; i <= numData; ++i) {
-		//fetch the data from the table
-		lua_pushinteger(from,i);
-		lua_gettable(from,-2);
-
-		//transfer it
-		ZTransferData(from,to,-1);
-		lua_pop(from,1);
-		numtransfered++;
-	}
-
-	//remove that table
-	lua_pop(from,1);
-	lua_pushinteger(from,d->firstIndex);
-	lua_pushnil(from);
-	lua_settable(from,-3);
+	lua_pop(from, 1);
 
 	return numtransfered;
 }
@@ -266,7 +273,7 @@ static inline int ZPipeReceiveInternal(lua_State *L, int idx)
 	}
 
 	// get pipe id
-	id = LGetIntField(L,idx,"id");
+	id = *((size_t *)lua_touserdata(L, idx));
 	// get internal data
 	d = (ZPipeData *) TArrayGet(zenithPipes.data,id-1);
 
@@ -274,6 +281,7 @@ static inline int ZPipeReceiveInternal(lua_State *L, int idx)
 
 	transfer = ZPipeFetchTransferState();
 	if(d->lastIndex > 1) {
+		int index = d->firstIndex;
 		//fetch the pipe data
 		if(ZPipeGetPipe(transfer, id)) {
 			ZPipeReleaseTransferState(transfer);
@@ -282,11 +290,11 @@ static inline int ZPipeReceiveInternal(lua_State *L, int idx)
 		}
 
 		do {
-			int transfered = ZPipeTransferDataTo(transfer,L,d);
+			int transfered = ZPipeTransferDataTo(transfer, L, d, index, id);
 			if(transfered == -1) break;
 			numtransfered += transfered;
-			d->firstIndex++;
-		} while(allData && d->firstIndex != d->lastIndex);
+			index++;
+		} while (allData && index != d->lastIndex);
 
 		//clean up
 		lua_pop(transfer,1);
@@ -369,31 +377,25 @@ static int ZPipeLuaReceive(lua_State *L)
 	return 0;
 }
 
-void ZPipeSetState(lua_State *L, const char *name)
+static const struct luaL_Reg ZPipeMetaFunctions[] = {
+	{ "send", ZPipeLuaSend },
+	{ "receive", ZPipeLuaReceive },
+	{ 0, 0 }
+};
+
+void ZPipeSetState(lua_State *L)
 {
-	lua_getfield(L,-1,"Access");
-	lua_getfield(L,-2,"Pipes");
+	size_t *pipe = (size_t *)lua_newuserdata(L, sizeof(size_t));
+	*pipe = zenithPipes.nextID;
 
-	// STACK
-	// -1 pipes table
-	// -2 access table
-	// -3 Pipe table
-	
-	// create pipe
-	lua_createtable(L,0,1);
-	LSetIntField(L,-1,"id",zenithPipes.nextID);
+	luaL_getmetatable(L, ZPIPEMETA);
+	if (lua_isnil(L, -1)) {
+		lua_pop(L, 1);
+		LSetMetaTable(L, ZPIPEMETA, ZPipeMetaFunctions);
+		luaL_getmetatable(L, ZPIPEMETA);
+	}
 
-	lua_pushvalue(L,-1);
-	lua_setfield(L,-2,"__index");
-
-	//set access as metatable
-	lua_pushvalue(L,-3);
-	lua_setmetatable(L,-2);
-
-	//push to pipes table
-	lua_setfield(L,-2,name);
-
-	lua_pop(L,3);
+	lua_setmetatable(L, -2);
 }
 
 static void ZPipeCreateInternal(void)
@@ -407,49 +409,15 @@ static void ZPipeCreateInternal(void)
 	TMutexUnlock(zenithPipes.m);
 }
 
-void ZPipeCreate(const char *name, lua_State *L1, lua_State *L2)
+void ZPipeCreate(lua_State *L1, lua_State *L2)
 {
-	char namerplcmnt[64];
 	if(L1 == L2) return;
-
-	LGetElement(L1,"Zenith","Pipe",NULL);
-	if(!lua_istable(L1,-1)) return;
-
-	LGetElement(L2,"Zenith","Pipe",NULL);
-	if(!lua_istable(L2,-1)) return;
-
-	if(!name) {
-		snprintf(namerplcmnt,sizeof(namerplcmnt),"pipe%d",zenithPipes.nextID);
-		name = namerplcmnt;
-	}
 
 	//set pipe
 	ZPipeCreateInternal();
 
-	ZPipeSetState(L1,name);
-	ZPipeSetState(L2,name);
+	ZPipeSetState(L1);
+	ZPipeSetState(L2);
 
 	zenithPipes.nextID++;
-}
-
-static const struct luaL_Reg ZPipeAccessTableFunctions[] = {
-	{"send",ZPipeLuaSend},
-	{"receive",ZPipeLuaReceive},
-	{NULL,NULL}
-};
-
-void ZPipeRegister(lua_State *L)
-{
-	//this supposes that Zenith is on top
-	lua_newtable(L);
-	lua_setfield(L, -2, "Pipes");
-
-	//create access table
-	lua_createtable(L,0,2);
-	luaL_openlib(L, 0, ZPipeAccessTableFunctions, 0);
-
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
-
-	lua_setfield(L, -2, "Access");
 }

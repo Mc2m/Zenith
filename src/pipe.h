@@ -35,8 +35,6 @@ int ZPipeSend(lua_State *L, int idx);
  */
 int ZPipeReceive(lua_State *L, int idx);
 
-void ZPipeCreate(const char *name, lua_State *L1, lua_State *L2);
-
-void ZPipeRegister(lua_State *L);
+void ZPipeCreate(lua_State *L1, lua_State *L2);
 
 #endif
