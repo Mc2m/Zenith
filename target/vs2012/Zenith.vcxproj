@@ -83,6 +83,7 @@
     <ClInclude Include="..\..\src\RequestManager.lua" />
     <ClInclude Include="..\..\src\Request.lua" />
     <ClInclude Include="..\..\src\Request_execute.lua" />
+    <ClInclude Include="..\..\TODO.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
