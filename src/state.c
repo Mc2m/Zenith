@@ -61,5 +61,5 @@ static const struct luaL_Reg ZStateFunctions[] = {
 
 void ZStateRegister(lua_State *L)
 {
-	luaL_openlib(L,NULL,ZStateFunctions,0);
+	LOpenLib(L, ZStateFunctions);
 }
