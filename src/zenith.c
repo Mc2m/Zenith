@@ -28,11 +28,11 @@ void ZenithOpenLibrary(lua_State *L, int flags)
 		lua_setfield(L,-2,"State");
 	}
 
-	if (flags & ZENITH_LIBRARY_PIPE) {
+	/*if (flags & ZENITH_LIBRARY_PIPE) {
 		lua_newtable(L);
 		ZPipeRegister(L);
 		lua_setfield(L,-2,"Pipe");
-	}
+	}*/
 
 	lua_setglobal(L,"Zenith");
 }
