@@ -216,31 +216,33 @@ static inline int ZPipeTransferDataTo(lua_State *from, lua_State *to, ZPipeData 
 	lua_pushinteger(from, index);
 	lua_gettable(from, -2);
 
-	if (LGetIntField(from, -1, "id") != id) {
-		numData = lua_objlen(from, -1);
-		if (!lua_checkstack(to, numData)) {
-			// not enough space. stop this
-			lua_pop(from, 1);
-			return -1;
+	if (lua_istable(from, -1)) {
+		if (LGetIntField(from, -1, "id") != id) {
+			numData = lua_objlen(from, -1);
+			if (!lua_checkstack(to, numData)) {
+				// not enough space. stop this
+				lua_pop(from, 1);
+				return -1;
+			}
+
+			//transfer
+			for (i = 1; i <= numData; ++i) {
+				//fetch the data from the table
+				lua_pushinteger(from, i);
+				lua_gettable(from, -2);
+
+				//transfer it
+				ZTransferData(from, to, -1);
+				lua_pop(from, 1);
+				numtransfered++;
+			}
+
+			//remove that table
+			if (index == d->firstIndex) d->firstIndex++;
+			lua_pushinteger(from, index);
+			lua_pushnil(from);
+			lua_settable(from, -4);
 		}
-
-		//transfer
-		for (i = 1; i <= numData; ++i) {
-			//fetch the data from the table
-			lua_pushinteger(from, i);
-			lua_gettable(from, -2);
-
-			//transfer it
-			ZTransferData(from, to, -1);
-			lua_pop(from, 1);
-			numtransfered++;
-		}
-
-		//remove that table
-		if (index == d->firstIndex) d->firstIndex++;
-		lua_pushinteger(from, index);
-		lua_pushnil(from);
-		lua_settable(from, -4);
 	}
 
 	lua_pop(from, 1);
