@@ -1,5 +1,5 @@
 
-local Request = require 'Request'
+local Request = require 'request'
 
 local ExecuteRequest = {
 }
