@@ -80,9 +80,9 @@
     <ClInclude Include="..\..\src\stdafx.h" />
     <ClInclude Include="..\..\src\transfer.h" />
     <ClInclude Include="..\..\src\zenith.h" />
-    <ClInclude Include="..\..\src\RequestManager.lua" />
-    <ClInclude Include="..\..\src\Request.lua" />
-    <ClInclude Include="..\..\src\Request_execute.lua" />
+    <ClInclude Include="..\..\src\requestmanager.lua" />
+    <ClInclude Include="..\..\src\request.lua" />
+    <ClInclude Include="..\..\src\request_execute.lua" />
     <ClInclude Include="..\..\TODO.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
