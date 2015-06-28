@@ -130,7 +130,7 @@ static inline int ZPipeSendInternal(lua_State *L, int idx)
 	if(idx < 0) idx += lua_gettop(L)+1;
 
 	//check the stack
-	if(lua_gettop(L) < idx+2 || !lua_istable(L,idx) || (!lua_isnumber(L,idx+1) && !lua_isnil(L,idx+1))) {
+	if(lua_gettop(L) < idx+2 || !lua_isuserdata(L,idx) || (!lua_isnumber(L,idx+1) && !lua_isnil(L,idx+1))) {
 		lua_pushstring(L,"invalid function parameter, you should have pipe:send(delay,...)");
 		return 1;
 	}
@@ -178,7 +178,7 @@ static inline int ZPipeSendInternal(lua_State *L, int idx)
 		lua_createtable(transfer, numdata, 1);
 
 		//store id for source identification
-		LSetIntField(L, -1, "id", id);
+		LSetIntField(transfer, -1, "id", id);
 
 		//transfer the data
 		for(j = 1; j <= numdata; ++i, ++j) {
@@ -269,8 +269,8 @@ static inline int ZPipeReceiveInternal(lua_State *L, int idx)
 	if(idx < 0) idx += lua_gettop(L)+1;
 
 	//check the stack
-	if(lua_gettop(L) < idx+1 || !lua_istable(L,idx) || !lua_isnumber(L,idx+1)) {
-		lua_pushstring(L,"invalid function parameter, you should have pipe:receive(timeout,...)");
+	if(lua_gettop(L) < idx+1 || !lua_isuserdata(L,idx) || !lua_isnumber(L,idx+1)) {
+		lua_pushstring(L,"invalid function parameter, you should have pipe:receive(timeout(number),receive all(boolean))");
 		return 1;
 	}
 
