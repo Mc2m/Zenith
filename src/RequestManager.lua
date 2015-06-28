@@ -1,14 +1,14 @@
 
-local Pipes = Zenith.Pipe.Pipes
-
 local RequestManager = {
-    requests = {}
+    requests = {},
+	pipes = {}
 }
 
-function RequestManager:send(pipeName, request)
-    -- fetch the pipe
-    local pipe = Pipes[pipeName]
+function RequestManager:addPipe(pipe)
+	table.insert(self.pipes,pipe)
+end
 
+function RequestManager:send(pipe, request)
     if pipe then
         local data,wait = request:prepare()
 
@@ -20,22 +20,22 @@ end
 
 function RequestManager:receive()
     -- check all pipes
-    for name,pipe in pairs(Pipes) do
+    for _,pipe in ipairs(self.pipes) do
         local data = nil
 
         -- receive from the pipe
         data = pipe:receive(0,0)
 
         if data then
-            local request = self.requests[name]
+            local request = self.requests[pipe]
             if request then
                 -- we still have a request running for that pipe
                 -- resume it with the data on the pipe
-                self.requests[name] = nil
+                self.requests[pipe] = nil
                 coroutine.resume(request)
 
                 if coroutine.status(result) == 'dead' then
-                    self.requests[name] = nil
+                    self.requests[pipe] = nil
                 end
 
             elseif data.execute then
@@ -45,7 +45,7 @@ function RequestManager:receive()
                     request = coroutine.create(data.execute)
                     result = {coroutine.resume(request, nil, data)}
                     if coroutine.status(request) ~= 'dead' then
-                        self.requests[name] = request
+                        self.requests[pipe] = request
                     end
 
                     if #result > 1 then
