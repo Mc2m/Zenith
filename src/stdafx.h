@@ -4,10 +4,10 @@
 
 #undef __cplusplus
 
+#include <tdefine.h>
+
 #include <stdlib.h>
 #include <stdio.h>
-
-#include <tdefine.h>
 
 #include <lux.h>
 

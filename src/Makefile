@@ -4,7 +4,7 @@ LD       := $(CC)
 AR       := ar -cvq
 RM       := rm -rf
 
-CFLAGS   += -c -Wall -D_DEBUG
+CFLAGS   += -g -c -Wall -D_DEBUG
 
 WORKDIR  := $(shell pwd)
 OBJSDIR  := .objs/
