@@ -47,7 +47,15 @@ void ZenithOpenLibrary(lua_State *L, int flags) {
 	}
 
 	//set public table in global table
-	lua_setglobal(L, "Zenith");
+	lua_pushvalue(L, -1);
+	lua_setglobal(L, "zenith");
+
+	//set table in loaded
+	lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
+	lua_pushvalue(L, -2);
+	lua_setfield(L, -2, "zenith");
+
+	lua_pop(L, 2);
 
 	//store table in registy
 	lua_pushlightuserdata(L, (void *)&metaKey);
