@@ -5,7 +5,7 @@ local RequestManager = {
 }
 
 function RequestManager:addPipe(pipe)
-	table.insert(self.pipes,pipe)
+	table.insert(self.pipes, pipe)
 end
 
 function RequestManager:send(pipe, request)
@@ -13,7 +13,7 @@ function RequestManager:send(pipe, request)
         local data,wait = request:prepare()
 
         if data and type(data.execute) == "function" then
-            return pipe:send(wait,data)
+            return pipe:send(wait, data)
         end
     end
 end
@@ -24,7 +24,7 @@ function RequestManager:receive()
         local data = nil
 
         -- receive from the pipe
-        data = pipe:receive(0,0)
+        data = pipe:receive(0, 0)
 
         if data then
             local request = self.requests[pipe]
