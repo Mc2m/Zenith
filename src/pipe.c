@@ -11,7 +11,7 @@
 #include <tthread.h>
 
 #define PIPE_SEND_DATA_LIMIT 1000
-static const char ZPIPEMETA[] = "ZENITH_PIPE_META";
+#define PIPE_META_FIELD "PIPE_META"
 
 typedef struct _ZPipeData {
 	TCV *v;
@@ -42,12 +42,14 @@ static struct ZPipes {
 	TMutex *m;
 	TArray *data;
 	TSize nextID;
-} zenithPipes = { 0 };
+	void *metaKey;
+} zenithPipes = {0};
 
-void ZPipeInitialize(void) {
+void ZPipeInitialize(void *metaKey) {
 	zenithPipes.nextID = 1;
 	zenithPipes.transfer = lua_open();
 	zenithPipes.m = TMutexNew(T_MUTEX_RECURSIVE);
+	zenithPipes.metaKey = metaKey;
 
 	luaL_openlibs(zenithPipes.transfer);
 
@@ -374,18 +376,38 @@ static const struct luaL_Reg ZPipeMetaFunctions[] = {
 	{ 0, 0 }
 };
 
-void ZPipeSetState(lua_State *L) {
+int ZPipeSetState(lua_State *L, const char *name) {
 	size_t *pipe = (size_t *)lua_newuserdata(L, sizeof(size_t));
 	*pipe = zenithPipes.nextID;
 
-	luaL_getmetatable(L, ZPIPEMETA);
+	// fetch zenith table
+	lua_pushlightuserdata(L, zenithPipes.metaKey);
+	lua_gettable(L, LUA_REGISTRYINDEX);
 	if (lua_isnil(L, -1)) {
-		lua_pop(L, 1);
-		LSetMetaTable(L, ZPIPEMETA, ZPipeMetaFunctions);
-		luaL_getmetatable(L, ZPIPEMETA);
+		lua_pop(L, 2);
+		return 1;
 	}
 
-	lua_setmetatable(L, -2);
+	lua_getfield(L, -1, PIPE_META_FIELD);
+	if (lua_isnil(L, -1)) {
+		lua_pop(L, 1);
+		LSetTableFieldS(L, -1, PIPE_META_FIELD, ZPipeMetaFunctions);
+		lua_getfield(L, -1, PIPE_META_FIELD);
+	}
+
+	lua_setmetatable(L, -3);
+	
+	if (name) {
+		lua_getfield(L, -1, "pipes");
+		lua_pushvalue(L, -3);
+		lua_setfield(L, -2, name);
+
+		lua_pop(L, 2);
+	} else {
+		lua_pop(L, 1);
+	}
+
+	return 0;
 }
 
 static void ZPipeCreateInternal(void) {
@@ -398,14 +420,15 @@ static void ZPipeCreateInternal(void) {
 	TMutexUnlock(zenithPipes.m);
 }
 
-void ZPipeCreate(lua_State *L1, lua_State *L2) {
+void ZPipeCreate(lua_State *L1, lua_State *L2, const char *name) {
 	if (L1 == L2) return;
+	if (!zenithPipes.metaKey) return;
 
 	//set pipe
 	ZPipeCreateInternal();
 
-	ZPipeSetState(L1);
-	ZPipeSetState(L2);
+	if (ZPipeSetState(L1, name)) return;
+	if (ZPipeSetState(L2, name)) return;
 
 	zenithPipes.nextID++;
 }

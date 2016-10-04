@@ -3,36 +3,56 @@
 
 #include "zenith.h"
 
-void ZenithInitialize(int flags)
-{
-	if(flags & ZENITH_LIBRARY_PIPE)
-		ZPipeInitialize();
+static const char metaKey = 'k';
+
+void ZenithInitialize(int flags) {
+	if (flags & ZENITH_LIBRARY_PIPE)
+		ZPipeInitialize((void *)&metaKey);
 
 	if (flags & ZENITH_LIBRARY_STATE)
 		LSetReportFunc(ZStateReport);
 }
 
-void ZenithDestroy(void)
-{
+void ZenithDestroy(void) {
 	ZPipeDestroy();
 	LSetReportFunc(0);
 }
 
-void ZenithOpenLibrary(lua_State *L, int flags)
-{
+void ZenithOpenLibrary(lua_State *L, int flags) {
+	//setup Zenith library
+
+	//create internal and public tables
+	lua_newtable(L);
 	lua_newtable(L);
 
 	if (flags & ZENITH_LIBRARY_STATE) {
+		//add common state table
 		lua_newtable(L);
+		lua_pushvalue(L, -1);
+
+		lua_setfield(L, -3, "states");
+		lua_setfield(L, -3, "states");
+
+		//register public state functions
 		ZStateRegister(L);
-		lua_setfield(L,-2,"State");
 	}
 
-	/*if (flags & ZENITH_LIBRARY_PIPE) {
+	if (flags & ZENITH_LIBRARY_PIPE) {
+		//add common pipe table
 		lua_newtable(L);
-		ZPipeRegister(L);
-		lua_setfield(L,-2,"Pipe");
-	}*/
+		lua_pushvalue(L, -1);
 
-	lua_setglobal(L,"Zenith");
+		lua_setfield(L, -3, "pipes");
+		lua_setfield(L, -3, "pipes");
+	}
+
+	//set public table in global table
+	lua_setglobal(L, "Zenith");
+
+	//store table in registy
+	lua_pushlightuserdata(L, (void *)&metaKey);
+	lua_pushvalue(L, -2);
+	lua_settable(L, LUA_REGISTRYINDEX);
+
+	lua_pop(L, 1);
 }
