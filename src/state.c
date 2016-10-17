@@ -48,12 +48,12 @@ static int ZStateluaClose(lua_State *L) {
 	return 0;
 }
 
-static const struct luaL_Reg ZStateFunctions[] = {
-	{"newState", ZStateluaNew},
-	{"closeState", ZStateluaClose},
-	{NULL, NULL}
-};
-
 void ZStateRegister(lua_State *L) {
+	const struct luaL_Reg ZStateFunctions[] = {
+		{"newState", ZStateluaNew},
+		{"closeState", ZStateluaClose},
+		{0, 0}
+	};
+
 	LOpenLib(L, ZStateFunctions);
 }

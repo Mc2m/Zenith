@@ -370,12 +370,6 @@ static int ZPipeLuaReceive(lua_State *L) {
 	return 0;
 }
 
-static const struct luaL_Reg ZPipeMetaFunctions[] = {
-	{ "send", ZPipeLuaSend },
-	{ "receive", ZPipeLuaReceive },
-	{ 0, 0 }
-};
-
 int ZPipeSetState(lua_State *L, const char *name) {
 	size_t *pipe = (size_t *)lua_newuserdata(L, sizeof(size_t));
 	*pipe = zenithPipes.nextID;
@@ -390,6 +384,12 @@ int ZPipeSetState(lua_State *L, const char *name) {
 
 	lua_getfield(L, -1, PIPE_META_FIELD);
 	if (lua_isnil(L, -1)) {
+		const struct luaL_Reg ZPipeMetaFunctions[] = {
+			{"send", ZPipeLuaSend},
+			{"receive", ZPipeLuaReceive},
+			{0, 0}
+		};
+
 		lua_pop(L, 1);
 		LSetTableFieldS(L, -1, PIPE_META_FIELD, ZPipeMetaFunctions);
 		lua_getfield(L, -1, PIPE_META_FIELD);
