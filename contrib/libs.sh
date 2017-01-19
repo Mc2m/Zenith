@@ -2,60 +2,60 @@
 # store contrib build configuration
 
 luaJIT_Prebuild() {
-	echo "=== Building ${LABELNAME} ==="
+	echo "=== Building ${ABLABELNAME} ==="
 	echo ""
 
-	cd "${SCPATH}${FOLDER}"
+	cd "${ABSCPATH}${FABOLDER}"
 }
 
 luaJIT_Postbuild() {
 	rm -f luajit.exe lua*.pdb *.exp *.ilk
 			
-	mv $LIBNAME $LIBPATH
-	find ./ -type f -name '*.pdb' -exec mv '{}' $LIBPATH ';'
-	if [ -f $DLLNAME ]; then mv $DLLNAME $BINPATH; fi
+	mv $ABLIBNAME $ABLIBPATH
+	find ./ -type f -name '*.pdb' -exec mv '{}' $ABLIBPATH ';'
+	if [ -f $ABDLLNAME ]; then mv $ABDLLNAME $ABBINPATH; fi
 }
 
 luaJIT_Clean() {
-	echo -n "Cleaning ${LABELNAME}... "
-	rm -f "${LIBPATH}${LIBNAME}"
-	find $LIBPATH -type f -name '*.pdb' -exec rm -f '{}' ';'
+	echo -n "Cleaning ${ABLABELNAME}... "
+	rm -f "${ABLIBPATH}${ABLIBNAME}"
+	find $ABLIBPATH -type f -name '*.pdb' -exec rm -f '{}' ';'
 	rm -f "${BINPATH}${DLLNAME}"
 	echo "Done"
 }
 
 luaJIT() {
-	export PROJNAME="lua51"
-	export FOLDER="luajit/src/"
-	export LABELNAME="LuaJIT"
+	export PABROJNAME="lua51"
+	export ABFOLDER="luajit/src/"
+	export ABLABELNAME="LuaJIT"
 	
-	if [ ! $CLEAN ]; then
+	if [ ! $ABCLEAN ]; then
 		export CONFIG=""
-		if [ $DEBUG ]; then CONFIG="debug"; fi
-		if [ $STATIC ]; then CONFIG="${CONFIG} static"; fi
+		if [ $ABDEBUG ]; then CONFIG="debug"; fi
+		if [ $ABSTATIC ]; then CONFIG="${CONFIG} static"; fi
 		
-		export PREBUILDEVENT="luaJIT_Prebuild"
-		export BUILDEVENT="cmd.exe \/c \"msvcbuild.bat ${CONFIG}\""
-		export POSTBUILDEVENT="luaJIT_Postbuild"
+		export ABPREBUILDEVENT="luaJIT_Prebuild"
+		export ABBUILDEVENT="cmd.exe \/c \"msvcbuild.bat ${CONFIG}\""
+		export ABPOSTBUILDEVENT="luaJIT_Postbuild"
 		CONFIG=""
 	else
-		export CLEANEVENT="luaJIT_Clean"
+		export ABCLEANEVENT="luaJIT_Clean"
 	fi
 	
 	autobuildBuild
 }
 
 lux() {
-	export PROJNAME="lux"
-	export FOLDER="lux/"
-	export LABELNAME="Lux"
+	export ABPROJNAME="lux"
+	export ABFOLDER="lux/"
+	export ABLABELNAME="Lux"
 	
-	if [ ! $CLEAN ]; then
-		export PREPROCDEF="/D _CRT_SECURE_NO_WARNINGS"
-		export COMPILEOPTS="/I\"../luajit/src\" /W3 /MP /Oy- /Gm- /TC /GF"
-		export SRCS="*.c"
+	if [ ! $ABCLEAN ]; then
+		export ABPREPROCDEF="/D _CRT_SECURE_NO_WARNINGS"
+		export ABCOMPILEOPTS="/I\"../luajit/src\" /W3 /MP /Oy- /Gm- /TC /GF"
+		export ABSRCS="*.c"
 		
-		if [ $DEBUG ]; then
+		if [ $ABDEBUG ]; then
 			export COMPILEOPTS="$COMPILEOPTS /ZI /Od /RTC1 /sdl /WX"
 		else
 			export COMPILEOPTS="$COMPILEOPTS /GL /Gy /Ox /GS /WX-"
