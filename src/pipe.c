@@ -395,6 +395,10 @@ int ZPipeSetState(lua_State *L, const char *name) {
 		lua_getfield(L, -1, PIPE_META_FIELD);
 	}
 
+	lua_pushstring(L, "__index");
+	lua_pushvalue(L, -2);
+	lua_rawset(L, -3);
+
 	lua_setmetatable(L, -3);
 	
 	if (name) {
