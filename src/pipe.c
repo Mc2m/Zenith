@@ -179,9 +179,8 @@ static inline int ZPipeSendInternal(lua_State *L, int idx) {
 
 		//transfer the data
 		for (j = 1; j <= numdata; ++i, ++j) {
-			lua_pushnumber(transfer, j);
 			ZTransferData(L, transfer, i);
-			lua_settable(transfer, -3);
+			lua_rawseti(transfer, -2, j);
 		}
 
 		lua_settable(transfer, -3);
@@ -213,7 +212,7 @@ static inline int ZPipeTransferDataTo(lua_State *from, lua_State *to, ZPipeData 
 	lua_gettable(from, -2);
 
 	if (lua_istable(from, -1)) {
-		if (LGetIntField(from, -1, "id") != id) {
+		if (LGetIntField(from, -1, "id") == id) {
 			numData = lua_objlen(from, -1);
 			if (!lua_checkstack(to, numData)) {
 				// not enough space. stop this
