@@ -1,16 +1,16 @@
 
 local RequestManager = {
-    requests = {},
-	pipes = {}
+    requests = { },
+    pipes = { }
 }
 
 function RequestManager:addPipe(pipe)
-	table.insert(self.pipes, pipe)
+    table.insert(self.pipes, pipe)
 end
 
 function RequestManager:send(pipe, request)
     if pipe then
-        local data,wait = request:prepare()
+        local data, wait = request:prepare()
 
         if data and type(data.execute) == "function" then
             return pipe:send(wait, data)
@@ -20,7 +20,7 @@ end
 
 function RequestManager:receive()
     -- check all pipes
-    for _,pipe in ipairs(self.pipes) do
+    for name, pipe in pairs(self.pipes) do
         local data = nil
 
         -- receive from the pipe
@@ -43,24 +43,24 @@ function RequestManager:receive()
                 if coroutine then
                     -- create request in coroutine
                     request = coroutine.create(data.execute)
-                    result = {coroutine.resume(request, nil, data)}
+                    result = { coroutine.resume(request, nil, data) }
                     if coroutine.status(request) ~= 'dead' then
                         self.requests[pipe] = request
                     end
 
                     if #result > 1 then
-						table.remove(result,1)
-					else
-						result = nil
-					end
+                        table.remove(result, 1)
+                    else
+                        result = nil
+                    end
                 else
                     -- execute it
-                    result = {data:execute()}
+                    result = { data:execute() }
                 end
 
                 if result then
                     -- send back the result
-                    pipe:send(0,unpack(result))
+                    pipe:send(0, unpack(result))
                 end
             end
         end
