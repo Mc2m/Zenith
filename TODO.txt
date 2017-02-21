@@ -3,7 +3,6 @@ for v 1.0.0:
 
 --PRIORITY
 	- Improve documentation
-	- Implement better access from lua
 	- Set up license
 
 --REQUIRED
